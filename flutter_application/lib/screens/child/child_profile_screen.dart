@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ChildProfileScreen extends StatelessWidget {
+  const ChildProfileScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text("Profile"));
+    return const Scaffold(body: Center(child: Text('Child Profile Screen')));
   }
 }

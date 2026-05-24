@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-class TaskScreen extends StatelessWidget {
+class ChildTaskScreen extends StatelessWidget {
+  const ChildTaskScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text("Task List"));
+    return const Scaffold(body: Center(child: Text('Child Task Screen')));
   }
 }
