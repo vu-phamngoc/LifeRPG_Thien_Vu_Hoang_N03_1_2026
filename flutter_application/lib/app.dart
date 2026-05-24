@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'providers/task_provider.dart';
 import 'screens/shared/splash_screen.dart';
 
 class LifeRPGApp extends StatelessWidget {
@@ -6,11 +9,17 @@ class LifeRPGApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Life RPG',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.deepPurple),
-      home: const SplashScreen(),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => TaskProvider())],
+      child: MaterialApp(
+        title: 'Life RPG',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.deepPurple,
+        ),
+        home: const SplashScreen(),
+      ),
     );
   }
 }
