@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/task_provider.dart';
 
 class ChildHomeScreen extends StatelessWidget {
   const ChildHomeScreen({super.key});
@@ -21,9 +24,7 @@ class ChildHomeScreen extends StatelessWidget {
             backgroundColor: color,
             child: const Icon(Icons.task, color: Colors.white),
           ),
-
           const SizedBox(width: 16),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,9 +36,7 @@ class ChildHomeScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   '+$exp EXP',
                   style: TextStyle(color: color, fontWeight: FontWeight.bold),
@@ -45,7 +44,6 @@ class ChildHomeScreen extends StatelessWidget {
               ],
             ),
           ),
-
           FilledButton(onPressed: () {}, child: const Text('Làm')),
         ],
       ),
@@ -54,6 +52,8 @@ class ChildHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tasks = context.watch<TaskProvider>().pendingTasks;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Life RPG'), centerTitle: true),
       body: SingleChildScrollView(
@@ -80,19 +80,15 @@ class ChildHomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   const Text(
                     '150 / 200 EXP',
                     style: TextStyle(color: Colors.white70),
                   ),
-
                   const SizedBox(height: 20),
-
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: LinearProgressIndicator(
+                    child: const LinearProgressIndicator(
                       value: 0.75,
                       minHeight: 14,
                       backgroundColor: Colors.white24,
@@ -101,29 +97,24 @@ class ChildHomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 32),
-
             const Text(
               'Nhiệm vụ hôm nay',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 20),
-
-            buildTaskCard(
-              title: 'Làm bài tập toán',
-              exp: 20,
-              color: Colors.blue,
-            ),
-
-            buildTaskCard(title: 'Dọn phòng', exp: 15, color: Colors.orange),
-
-            buildTaskCard(
-              title: 'Đọc sách 30 phút',
-              exp: 25,
-              color: Colors.green,
-            ),
+            if (tasks.isEmpty)
+              const Center(child: Text('Chưa có nhiệm vụ'))
+            else
+              Column(
+                children: tasks.map((task) {
+                  return buildTaskCard(
+                    title: task.title,
+                    exp: task.expReward,
+                    color: Colors.blue,
+                  );
+                }).toList(),
+              ),
           ],
         ),
       ),

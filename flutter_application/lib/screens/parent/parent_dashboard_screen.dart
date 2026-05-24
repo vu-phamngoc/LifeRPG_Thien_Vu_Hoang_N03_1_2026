@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'create_task_screen.dart';
+
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
 
@@ -56,16 +58,12 @@ class ParentDashboardScreen extends StatelessWidget {
               'Xin chào phụ huynh 👋',
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 8),
-
             Text(
               'Quản lý nhiệm vụ và theo dõi tiến độ của trẻ',
               style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
             ),
-
             const SizedBox(height: 32),
-
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -99,22 +97,26 @@ class ParentDashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 32),
-
             const Text(
               'Quản lý',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 20),
-
-            buildMenuButton(icon: Icons.add_task, title: 'Tạo nhiệm vụ'),
-
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
+                );
+              },
+              child: buildMenuButton(
+                icon: Icons.add_task,
+                title: 'Tạo nhiệm vụ',
+              ),
+            ),
             buildMenuButton(icon: Icons.verified, title: 'Xác nhận nhiệm vụ'),
-
             buildMenuButton(icon: Icons.child_care, title: 'Quản lý trẻ em'),
-
             buildMenuButton(icon: Icons.history, title: 'Lịch sử hoạt động'),
           ],
         ),
