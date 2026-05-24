@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 
 class ChildHomeScreen extends StatelessWidget {
   const ChildHomeScreen({super.key});
 
   Widget buildTaskCard({
-    required String title,
-    required int exp,
+    required BuildContext context,
+    required TaskModel task,
     required Color color,
   }) {
     return Container(
@@ -30,7 +31,7 @@ class ChildHomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  task.title,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -38,13 +39,18 @@ class ChildHomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '+$exp EXP',
+                  '+${task.expReward} EXP',
                   style: TextStyle(color: color, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
-          FilledButton(onPressed: () {}, child: const Text('Làm')),
+          FilledButton(
+            onPressed: () {
+              context.read<TaskProvider>().submitTask(task.id);
+            },
+            child: const Text('Hoàn thành'),
+          ),
         ],
       ),
     );
@@ -109,8 +115,8 @@ class ChildHomeScreen extends StatelessWidget {
               Column(
                 children: tasks.map((task) {
                   return buildTaskCard(
-                    title: task.title,
-                    exp: task.expReward,
+                    context: context,
+                    task: task,
                     color: Colors.blue,
                   );
                 }).toList(),

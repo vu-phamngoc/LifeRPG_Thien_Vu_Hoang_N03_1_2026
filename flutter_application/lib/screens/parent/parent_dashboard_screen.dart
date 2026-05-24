@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'create_task_screen.dart';
+import 'verify_task_screen.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
@@ -115,7 +116,18 @@ class ParentDashboardScreen extends StatelessWidget {
                 title: 'Tạo nhiệm vụ',
               ),
             ),
-            buildMenuButton(icon: Icons.verified, title: 'Xác nhận nhiệm vụ'),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const VerifyTaskScreen()),
+                );
+              },
+              child: buildMenuButton(
+                icon: Icons.verified,
+                title: 'Xác nhận nhiệm vụ',
+              ),
+            ),
             buildMenuButton(icon: Icons.child_care, title: 'Quản lý trẻ em'),
             buildMenuButton(icon: Icons.history, title: 'Lịch sử hoạt động'),
           ],
