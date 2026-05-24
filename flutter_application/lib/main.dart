@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/front/screens/home_screen.dart';
-import 'package:flutter_application/front/screens/form_screen.dart';
+import 'package:flutter_application/screens/child/child_home_screen.dart';
+import 'package:flutter_application/screens/parent/create_task_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,14 +35,10 @@ class _DemoPageState extends State<DemoPage> {
       "difficulty": "Easy",
       "expReward": 50,
       "isCompleted": false,
-    }
+    },
   ];
 
-  Map<String, dynamic> users = {
-    "name": "Phạm Ngọc Vũ",
-    "exp": 120,
-    "level": 2,
-  };
+  Map<String, dynamic> users = {"name": "Phạm Ngọc Vũ", "exp": 120, "level": 2};
 
   void checkLevelUp() {
     if (users['exp'] >= 200) {
@@ -106,18 +102,26 @@ class _DemoPageState extends State<DemoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(task['title'],
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.w600)),
+                Text(
+                  task['title'],
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
 
-                Text("Difficulty: ${task['difficulty']}",
-                    style: const TextStyle(color: Colors.grey)),
+                Text(
+                  "Difficulty: ${task['difficulty']}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
 
                 const SizedBox(height: 10),
 
                 task['isCompleted']
-                    ? const Text("Completed ✅",
-                        style: TextStyle(color: Colors.green))
+                    ? const Text(
+                        "Completed ✅",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : OutlinedButton(
                         onPressed: () {
                           setState(() {
@@ -127,10 +131,10 @@ class _DemoPageState extends State<DemoPage> {
                           });
                         },
                         child: const Text("Start"),
-                      )
+                      ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -147,10 +151,7 @@ class _DemoPageState extends State<DemoPage> {
 
             const Text(
               "Life RPG",
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 48, fontWeight: FontWeight.w600),
             ),
 
             const SizedBox(height: 10),
@@ -189,10 +190,10 @@ class _DemoPageState extends State<DemoPage> {
                       onPressed: () {},
                       child: const Text("Submit"),
                     ),
-                  )
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -215,7 +216,7 @@ class _DemoPageState extends State<DemoPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -224,11 +225,7 @@ class _DemoPageState extends State<DemoPage> {
   // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
-    List<Widget> tabs = [
-      const HomeScreen(),
-      contentTab(),
-      aboutTab(),
-    ];
+    List<Widget> tabs = [const ChildHomeScreen(), contentTab(), aboutTab()];
 
     return Scaffold(
       body: tabs[_currentIndex],
@@ -238,7 +235,10 @@ class _DemoPageState extends State<DemoPage> {
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: "Content"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu_book),
+            label: "Content",
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: "About"),
         ],
       ),
