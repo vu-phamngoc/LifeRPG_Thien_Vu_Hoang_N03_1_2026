@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../parent/parent_dashboard_screen.dart';
 import '../child/child_home_screen.dart';
 
@@ -17,9 +18,11 @@ class RoleSelectScreen extends StatelessWidget {
             const Text(
               'Bạn muốn sử dụng ứng dụng với vai trò nào?',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 32),
+
             SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -34,7 +37,9 @@ class RoleSelectScreen extends StatelessWidget {
                 child: const Text('Phụ huynh'),
               ),
             ),
+
             const SizedBox(height: 16),
+
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(

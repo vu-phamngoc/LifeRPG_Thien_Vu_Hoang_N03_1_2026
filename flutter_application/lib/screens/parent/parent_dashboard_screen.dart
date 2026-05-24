@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../auth/role_select_screen.dart';
 import 'create_task_screen.dart';
 import 'verify_task_screen.dart';
+import '../shared/activity_log_screen.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
@@ -27,7 +29,7 @@ class ParentDashboardScreen extends StatelessWidget {
             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
-          Text(title, style: const TextStyle(fontSize: 16)),
+          Text(title),
         ],
       ),
     );
@@ -49,7 +51,22 @@ class ParentDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Parent Dashboard'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Parent Dashboard'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -59,12 +76,16 @@ class ParentDashboardScreen extends StatelessWidget {
               'Xin chào phụ huynh 👋',
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 8),
+
             Text(
               'Quản lý nhiệm vụ và theo dõi tiến độ của trẻ',
               style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
             ),
+
             const SizedBox(height: 32),
+
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -98,12 +119,16 @@ class ParentDashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
+
             const SizedBox(height: 32),
+
             const Text(
               'Quản lý',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 20),
+
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -116,6 +141,7 @@ class ParentDashboardScreen extends StatelessWidget {
                 title: 'Tạo nhiệm vụ',
               ),
             ),
+
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -128,8 +154,19 @@ class ParentDashboardScreen extends StatelessWidget {
                 title: 'Xác nhận nhiệm vụ',
               ),
             ),
-            buildMenuButton(icon: Icons.child_care, title: 'Quản lý trẻ em'),
-            buildMenuButton(icon: Icons.history, title: 'Lịch sử hoạt động'),
+
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ActivityLogScreen()),
+                );
+              },
+              child: buildMenuButton(
+                icon: Icons.history,
+                title: 'Lịch sử hoạt động',
+              ),
+            ),
           ],
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/task_provider.dart';
 import 'providers/child_provider.dart';
+import 'providers/activity_provider.dart';
 import 'screens/shared/splash_screen.dart';
 
 class LifeRPGApp extends StatelessWidget {
@@ -13,8 +14,12 @@ class LifeRPGApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TaskProvider()),
+
         ChangeNotifierProvider(create: (_) => ChildProvider()),
+
+        ChangeNotifierProvider(create: (_) => ActivityProvider()),
       ],
+
       child: MaterialApp(
         title: 'Life RPG',
         debugShowCheckedModeBanner: false,

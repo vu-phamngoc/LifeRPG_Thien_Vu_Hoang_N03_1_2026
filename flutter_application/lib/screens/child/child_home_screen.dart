@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
+import '../auth/role_select_screen.dart';
 
 class ChildHomeScreen extends StatelessWidget {
   const ChildHomeScreen({super.key});
@@ -26,6 +27,7 @@ class ChildHomeScreen extends StatelessWidget {
             backgroundColor: color,
             child: const Icon(Icons.task, color: Colors.white),
           ),
+
           const SizedBox(width: 16),
 
           Expanded(
@@ -64,12 +66,29 @@ class ChildHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tasks = context.watch<TaskProvider>().pendingTasks;
+
     final childProvider = context.watch<ChildProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Life RPG'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Life RPG'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
+
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

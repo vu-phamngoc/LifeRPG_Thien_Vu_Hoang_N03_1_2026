@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
+import '../../providers/activity_provider.dart';
 
 class VerifyTaskScreen extends StatelessWidget {
   const VerifyTaskScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final tasks = context.watch<TaskProvider>().submittedTasks;
+    final provider = context.watch<TaskProvider>();
+
+    final tasks = provider.tasks.where((task) {
+      return task.status == TaskStatus.submitted;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Xác nhận nhiệm vụ'), centerTitle: true),
+
       body: tasks.isEmpty
           ? const Center(child: Text('Không có nhiệm vụ chờ xác nhận'))
           : ListView.builder(
@@ -28,6 +35,7 @@ class VerifyTaskScreen extends StatelessWidget {
                     color: Colors.orange.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(24),
                   ),
+
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -52,6 +60,11 @@ class VerifyTaskScreen extends StatelessWidget {
                               onPressed: () {
                                 context.read<TaskProvider>().approveTask(
                                   task.id,
+                                );
+
+                                context.read<ActivityProvider>().addActivity(
+                                  title: 'Nhiệm vụ được xác nhận',
+                                  description: task.title,
                                 );
 
                                 context.read<ChildProvider>().addExp(

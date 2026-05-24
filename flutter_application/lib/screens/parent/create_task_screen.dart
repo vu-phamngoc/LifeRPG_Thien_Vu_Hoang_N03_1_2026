@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/task_provider.dart';
+import '../../providers/activity_provider.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({super.key});
@@ -29,6 +30,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       rewardAmount: int.tryParse(rewardController.text) ?? 0,
     );
 
+    context.read<ActivityProvider>().addActivity(
+      title: 'Tạo nhiệm vụ',
+      description: titleController.text.trim(),
+    );
+
     Navigator.pop(context);
   }
 
@@ -36,8 +42,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Tạo nhiệm vụ'), centerTitle: true),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
+
         child: Column(
           children: [
             TextField(
@@ -72,11 +80,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 'Trung bình',
                 'Khó',
               ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+
               onChanged: (value) {
                 setState(() {
                   difficulty = value!;
                 });
               },
+
               decoration: InputDecoration(
                 labelText: 'Độ khó',
                 border: OutlineInputBorder(
