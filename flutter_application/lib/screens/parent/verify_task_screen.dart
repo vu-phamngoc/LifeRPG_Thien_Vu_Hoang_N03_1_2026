@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/task_provider.dart';
+import '../../providers/child_provider.dart';
 
 class VerifyTaskScreen extends StatelessWidget {
   const VerifyTaskScreen({super.key});
@@ -51,6 +52,14 @@ class VerifyTaskScreen extends StatelessWidget {
                               onPressed: () {
                                 context.read<TaskProvider>().approveTask(
                                   task.id,
+                                );
+
+                                context.read<ChildProvider>().addExp(
+                                  task.expReward,
+                                );
+
+                                context.read<ChildProvider>().addReward(
+                                  task.rewardAmount,
                                 );
                               },
                               child: const Text('Approve'),

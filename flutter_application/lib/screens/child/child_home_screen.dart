@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/child_provider.dart';
 
 class ChildHomeScreen extends StatelessWidget {
   const ChildHomeScreen({super.key});
@@ -26,6 +27,7 @@ class ChildHomeScreen extends StatelessWidget {
             child: const Icon(Icons.task, color: Colors.white),
           ),
           const SizedBox(width: 16),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +39,9 @@ class ChildHomeScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   '+${task.expReward} EXP',
                   style: TextStyle(color: color, fontWeight: FontWeight.bold),
@@ -45,6 +49,7 @@ class ChildHomeScreen extends StatelessWidget {
               ],
             ),
           ),
+
           FilledButton(
             onPressed: () {
               context.read<TaskProvider>().submitTask(task.id);
@@ -59,6 +64,7 @@ class ChildHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tasks = context.watch<TaskProvider>().pendingTasks;
+    final childProvider = context.watch<ChildProvider>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Life RPG'), centerTitle: true),
@@ -75,27 +81,32 @@ class ChildHomeScreen extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(28),
               ),
+
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Level 2',
-                    style: TextStyle(
+                  Text(
+                    'Level ${childProvider.level}',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 8),
-                  const Text(
-                    '150 / 200 EXP',
-                    style: TextStyle(color: Colors.white70),
+
+                  Text(
+                    '${childProvider.exp} / ${childProvider.maxExpForCurrentLevel} EXP',
+                    style: const TextStyle(color: Colors.white70),
                   ),
+
                   const SizedBox(height: 20),
+
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: const LinearProgressIndicator(
-                      value: 0.75,
+                    child: LinearProgressIndicator(
+                      value: childProvider.expProgress.clamp(0.0, 1.0),
                       minHeight: 14,
                       backgroundColor: Colors.white24,
                     ),
@@ -103,12 +114,16 @@ class ChildHomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 32),
+
             const Text(
               'Nhiệm vụ hôm nay',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 20),
+
             if (tasks.isEmpty)
               const Center(child: Text('Chưa có nhiệm vụ'))
             else
