@@ -6,6 +6,7 @@ import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/achievement_provider.dart';
+import '../../providers/reward_provider.dart';
 
 class VerifyTaskScreen extends StatelessWidget {
   const VerifyTaskScreen({super.key});
@@ -75,6 +76,11 @@ class VerifyTaskScreen extends StatelessWidget {
                                 context.read<ChildProvider>().addReward(
                                   task.rewardAmount,
                                 );
+
+                                context.read<RewardProvider>().addCoins(
+                                  task.rewardAmount,
+                                );
+
                                 final childProvider = context
                                     .read<ChildProvider>();
 
