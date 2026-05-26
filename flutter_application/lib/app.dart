@@ -5,6 +5,7 @@ import 'providers/task_provider.dart';
 import 'providers/child_provider.dart';
 import 'providers/activity_provider.dart';
 import 'screens/shared/splash_screen.dart';
+import 'providers/achievement_provider.dart';
 
 class LifeRPGApp extends StatelessWidget {
   const LifeRPGApp({super.key});
@@ -18,6 +19,8 @@ class LifeRPGApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChildProvider()),
 
         ChangeNotifierProvider(create: (_) => ActivityProvider()),
+
+        ChangeNotifierProvider(create: (_) => AchievementProvider()),
       ],
 
       child: MaterialApp(

@@ -5,6 +5,7 @@ import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
 import '../../providers/activity_provider.dart';
+import '../../providers/achievement_provider.dart';
 
 class VerifyTaskScreen extends StatelessWidget {
   const VerifyTaskScreen({super.key});
@@ -74,6 +75,12 @@ class VerifyTaskScreen extends StatelessWidget {
                                 context.read<ChildProvider>().addReward(
                                   task.rewardAmount,
                                 );
+                                final childProvider = context
+                                    .read<ChildProvider>();
+
+                                context
+                                    .read<AchievementProvider>()
+                                    .checkAchievements(childProvider.level);
                               },
                               child: const Text('Approve'),
                             ),
