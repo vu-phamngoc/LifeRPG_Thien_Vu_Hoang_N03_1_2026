@@ -7,7 +7,7 @@ import 'providers/activity_provider.dart';
 import 'providers/achievement_provider.dart';
 import 'providers/reward_provider.dart';
 
-import 'screens/child/child_main_navigation_screen.dart';
+import 'screens/auth/role_select_screen.dart';
 
 class LifeRPGApp extends StatelessWidget {
   const LifeRPGApp({super.key});
@@ -29,6 +29,7 @@ class LifeRPGApp extends StatelessWidget {
 
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
+
         title: 'Life RPG',
 
         theme: ThemeData(
@@ -36,7 +37,7 @@ class LifeRPGApp extends StatelessWidget {
           colorSchemeSeed: Colors.deepPurple,
         ),
 
-        home: const ChildMainNavigationScreen(),
+        home: const RoleSelectScreen(),
       ),
     );
   }

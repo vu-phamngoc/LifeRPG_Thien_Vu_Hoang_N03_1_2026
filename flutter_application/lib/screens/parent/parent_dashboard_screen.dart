@@ -6,9 +6,11 @@ import '../../providers/child_provider.dart';
 import '../../providers/achievement_provider.dart';
 
 import '../auth/role_select_screen.dart';
+import '../shared/settings_screen.dart';
+import '../shared/activity_log_screen.dart';
+
 import 'create_task_screen.dart';
 import 'verify_task_screen.dart';
-import '../shared/activity_log_screen.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
@@ -77,7 +79,18 @@ class ParentDashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Parent Dashboard'),
         centerTitle: true,
+
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+
           IconButton(
             icon: const Icon(Icons.swap_horiz),
             onPressed: () {
@@ -113,9 +126,12 @@ class ParentDashboardScreen extends StatelessWidget {
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+
               crossAxisCount: 2,
+
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
+
               children: [
                 buildCard(
                   icon: Icons.task_alt,
@@ -163,6 +179,7 @@ class ParentDashboardScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
                 );
               },
+
               child: buildMenuButton(
                 icon: Icons.add_task,
                 title: 'Tạo nhiệm vụ',
@@ -176,6 +193,7 @@ class ParentDashboardScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const VerifyTaskScreen()),
                 );
               },
+
               child: buildMenuButton(
                 icon: Icons.verified,
                 title: 'Xác nhận nhiệm vụ',
@@ -189,6 +207,7 @@ class ParentDashboardScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const ActivityLogScreen()),
                 );
               },
+
               child: buildMenuButton(
                 icon: Icons.history,
                 title: 'Lịch sử hoạt động',

@@ -436,21 +436,6 @@ class AchievementScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
-              height: 92,
-              decoration: const BoxDecoration(
-                color: Color(0xfffff8ff),
-                border: Border(top: BorderSide(color: Color(0xffeadff4))),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _BottomItem(icon: '🏠', label: 'Home'),
-                  _BottomItem(icon: '🏆', label: 'Content', active: true),
-                  _BottomItem(icon: 'ℹ️', label: 'About'),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -473,37 +458,6 @@ class AchievementScreen extends StatelessWidget {
         ),
         child: Text(text, style: const TextStyle(fontSize: 20)),
       ),
-    );
-  }
-}
-
-class _BottomItem extends StatelessWidget {
-  final String icon;
-  final String label;
-  final bool active;
-
-  const _BottomItem({
-    required this.icon,
-    required this.label,
-    this.active = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 27)),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: active ? const Color(0xff7048ff) : Colors.grey,
-          ),
-        ),
-      ],
     );
   }
 }

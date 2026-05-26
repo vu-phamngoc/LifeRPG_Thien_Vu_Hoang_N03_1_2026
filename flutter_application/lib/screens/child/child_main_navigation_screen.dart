@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'child_home_screen.dart';
+import 'child_task_screen.dart';
 import 'child_reward_screen.dart';
 import '../shared/achievement_screen.dart';
-import '../shared/activity_log_screen.dart';
 import 'child_profile_screen.dart';
 
 class ChildMainNavigationScreen extends StatefulWidget {
@@ -19,9 +19,9 @@ class _ChildMainNavigationScreenState extends State<ChildMainNavigationScreen> {
 
   final screens = const [
     ChildHomeScreen(),
-    AchievementScreen(),
+    ChildTaskScreen(),
     ChildRewardScreen(),
-    ActivityLogScreen(),
+    AchievementScreen(),
     ChildProfileScreen(),
   ];
 
@@ -43,9 +43,9 @@ class _ChildMainNavigationScreenState extends State<ChildMainNavigationScreen> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events),
-            label: 'Achievement',
+            icon: Icon(Icons.task_alt_outlined),
+            selectedIcon: Icon(Icons.task_alt),
+            label: 'Task',
           ),
           NavigationDestination(
             icon: Icon(Icons.card_giftcard_outlined),
@@ -53,9 +53,9 @@ class _ChildMainNavigationScreenState extends State<ChildMainNavigationScreen> {
             label: 'Reward',
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'Activity',
+            icon: Icon(Icons.emoji_events_outlined),
+            selectedIcon: Icon(Icons.emoji_events),
+            label: 'Achievement',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
