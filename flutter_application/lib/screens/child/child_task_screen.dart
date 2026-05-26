@@ -8,12 +8,10 @@ class ChildTaskScreen extends StatefulWidget {
   const ChildTaskScreen({super.key});
 
   @override
-  State<ChildTaskScreen> createState() =>
-      _ChildTaskScreenState();
+  State<ChildTaskScreen> createState() => _ChildTaskScreenState();
 }
 
-class _ChildTaskScreenState
-    extends State<ChildTaskScreen> {
+class _ChildTaskScreenState extends State<ChildTaskScreen> {
   String selectedFilter = 'All';
 
   Color getStatusColor(TaskStatus status) {
@@ -48,16 +46,13 @@ class _ChildTaskScreenState
     }
   }
 
-  List<TaskModel> filterTasks(
-    List<TaskModel> tasks,
-  ) {
+  List<TaskModel> filterTasks(List<TaskModel> tasks) {
     if (selectedFilter == 'All') {
       return tasks;
     }
 
     return tasks.where((task) {
-      return getStatusText(task.status) ==
-          selectedFilter;
+      return getStatusText(task.status) == selectedFilter;
     }).toList();
   }
 
@@ -72,31 +67,22 @@ class _ChildTaskScreenState
       },
 
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
 
         decoration: BoxDecoration(
-          color: active
-              ? Colors.deepPurple
-              : Colors.white,
+          color: active ? Colors.deepPurple : Colors.white,
 
           borderRadius: BorderRadius.circular(999),
 
           border: Border.all(
-            color: active
-                ? Colors.deepPurple
-                : Colors.grey.shade300,
+            color: active ? Colors.deepPurple : Colors.grey.shade300,
           ),
         ),
 
         child: Text(
           label,
           style: TextStyle(
-            color: active
-                ? Colors.white
-                : Colors.black87,
+            color: active ? Colors.white : Colors.black87,
 
             fontWeight: FontWeight.bold,
           ),
@@ -105,12 +91,8 @@ class _ChildTaskScreenState
     );
   }
 
-  Widget buildTaskCard(
-    BuildContext context,
-    TaskModel task,
-  ) {
-    final statusColor =
-        getStatusColor(task.status);
+  Widget buildTaskCard(BuildContext context, TaskModel task) {
+    final statusColor = getStatusColor(task.status);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
@@ -120,15 +102,11 @@ class _ChildTaskScreenState
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
 
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
+        border: Border.all(color: Colors.grey.shade200),
 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.04,
-            ),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -136,8 +114,7 @@ class _ChildTaskScreenState
       ),
 
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
           Row(
@@ -153,19 +130,15 @@ class _ChildTaskScreenState
               ),
 
               Container(
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 6,
                 ),
 
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(
-                    alpha: 0.12,
-                  ),
+                  color: statusColor.withValues(alpha: 0.12),
 
-                  borderRadius:
-                      BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(999),
                 ),
 
                 child: Text(
@@ -173,8 +146,7 @@ class _ChildTaskScreenState
 
                   style: TextStyle(
                     color: statusColor,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -185,10 +157,7 @@ class _ChildTaskScreenState
 
           Text(
             task.description,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              height: 1.5,
-            ),
+            style: TextStyle(color: Colors.grey.shade700, height: 1.5),
           ),
 
           const SizedBox(height: 18),
@@ -196,26 +165,22 @@ class _ChildTaskScreenState
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
 
                 decoration: BoxDecoration(
-                  color: Colors.orange
-                      .withValues(alpha: 0.12),
+                  color: Colors.orange.withValues(alpha: 0.12),
 
-                  borderRadius:
-                      BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16),
                 ),
 
                 child: Text(
                   '+${task.expReward} EXP',
                   style: const TextStyle(
                     color: Colors.orange,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -223,26 +188,22 @@ class _ChildTaskScreenState
               const SizedBox(width: 12),
 
               Container(
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
 
                 decoration: BoxDecoration(
-                  color: Colors.green
-                      .withValues(alpha: 0.12),
+                  color: Colors.green.withValues(alpha: 0.12),
 
-                  borderRadius:
-                      BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16),
                 ),
 
                 child: Text(
                   '${task.rewardAmount}đ',
                   style: const TextStyle(
                     color: Colors.green,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -251,56 +212,41 @@ class _ChildTaskScreenState
 
           const SizedBox(height: 20),
 
-          if (task.status ==
-              TaskStatus.pending)
+          if (task.status == TaskStatus.pending)
             SizedBox(
               width: double.infinity,
 
               child: FilledButton(
                 onPressed: () {
-                  context
-                      .read<TaskProvider>()
-                      .submitTask(task.id);
+                  context.read<TaskProvider>().submitTask(task.id);
                 },
 
-                child:
-                    const Text('Submit Task'),
+                child: const Text('Submit Task'),
               ),
             ),
 
-          if (task.status ==
-              TaskStatus.submitted)
+          if (task.status == TaskStatus.submitted)
             const SizedBox(
               width: double.infinity,
 
               child: FilledButton(
                 onPressed: null,
-                child: Text(
-                  'Waiting for Parent',
-                ),
+                child: Text('Waiting for Parent'),
               ),
             ),
 
-          if (task.status ==
-              TaskStatus.approved)
+          if (task.status == TaskStatus.approved)
             const SizedBox(
               width: double.infinity,
 
-              child: FilledButton(
-                onPressed: null,
-                child: Text('Completed'),
-              ),
+              child: FilledButton(onPressed: null, child: Text('Completed')),
             ),
 
-          if (task.status ==
-              TaskStatus.rejected)
+          if (task.status == TaskStatus.rejected)
             const SizedBox(
               width: double.infinity,
 
-              child: FilledButton(
-                onPressed: null,
-                child: Text('Rejected'),
-              ),
+              child: FilledButton(onPressed: null, child: Text('Rejected')),
             ),
         ],
       ),
@@ -309,79 +255,57 @@ class _ChildTaskScreenState
 
   @override
   Widget build(BuildContext context) {
-    final tasks =
-        context.watch<TaskProvider>().tasks;
+    final tasks = context.watch<TaskProvider>().tasks;
 
-    final filteredTasks =
-        filterTasks(tasks);
+    final filteredTasks = filterTasks(tasks);
 
     return Scaffold(
-      backgroundColor:
-          const Color(0xfffffaff),
+      backgroundColor: const Color(0xfffffaff),
 
-      appBar: AppBar(
-        title: const Text('Tasks'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Tasks'), centerTitle: true),
 
       body: Padding(
         padding: const EdgeInsets.all(20),
 
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
             const Text(
               'Task Management',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 10),
 
             const Text(
               'Theo dõi tiến độ nhiệm vụ',
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.black54, fontSize: 16),
             ),
 
             const SizedBox(height: 24),
 
             SingleChildScrollView(
-              scrollDirection:
-                  Axis.horizontal,
+              scrollDirection: Axis.horizontal,
 
               child: Row(
                 children: [
                   buildFilterChip('All'),
                   const SizedBox(width: 10),
 
-                  buildFilterChip(
-                    'Pending',
-                  ),
+                  buildFilterChip('Pending'),
 
                   const SizedBox(width: 10),
 
-                  buildFilterChip(
-                    'Submitted',
-                  ),
+                  buildFilterChip('Submitted'),
 
                   const SizedBox(width: 10),
 
-                  buildFilterChip(
-                    'Approved',
-                  ),
+                  buildFilterChip('Approved'),
 
                   const SizedBox(width: 10),
 
-                  buildFilterChip(
-                    'Rejected',
-                  ),
+                  buildFilterChip('Rejected'),
                 ],
               ),
             ),
@@ -390,21 +314,12 @@ class _ChildTaskScreenState
 
             Expanded(
               child: filteredTasks.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No Tasks',
-                      ),
-                    )
+                  ? const Center(child: Text('No Tasks'))
                   : ListView.builder(
-                      itemCount:
-                          filteredTasks.length,
+                      itemCount: filteredTasks.length,
 
-                      itemBuilder:
-                          (context, index) {
-                        return buildTaskCard(
-                          context,
-                          filteredTasks[index],
-                        );
+                      itemBuilder: (context, index) {
+                        return buildTaskCard(context, filteredTasks[index]);
                       },
                     ),
             ),
