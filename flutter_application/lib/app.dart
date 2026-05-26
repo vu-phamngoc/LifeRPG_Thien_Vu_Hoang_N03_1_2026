@@ -4,9 +4,10 @@ import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/child_provider.dart';
 import 'providers/activity_provider.dart';
-import 'screens/shared/splash_screen.dart';
 import 'providers/achievement_provider.dart';
 import 'providers/reward_provider.dart';
+
+import 'screens/child/child_main_navigation_screen.dart';
 
 class LifeRPGApp extends StatelessWidget {
   const LifeRPGApp({super.key});
@@ -27,13 +28,15 @@ class LifeRPGApp extends StatelessWidget {
       ],
 
       child: MaterialApp(
-        title: 'Life RPG',
         debugShowCheckedModeBanner: false,
+        title: 'Life RPG',
+
         theme: ThemeData(
           useMaterial3: true,
           colorSchemeSeed: Colors.deepPurple,
         ),
-        home: const SplashScreen(),
+
+        home: const ChildMainNavigationScreen(),
       ),
     );
   }

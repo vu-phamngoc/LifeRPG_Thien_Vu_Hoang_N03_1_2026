@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/task_provider.dart';
+import '../../providers/child_provider.dart';
+import '../../providers/achievement_provider.dart';
 
 import '../auth/role_select_screen.dart';
 import 'create_task_screen.dart';
@@ -23,12 +28,16 @@ class ParentDashboardScreen extends StatelessWidget {
       child: Column(
         children: [
           Icon(icon, size: 42, color: color),
+
           const SizedBox(height: 12),
+
           Text(
             value,
             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
+
           const SizedBox(height: 6),
+
           Text(title),
         ],
       ),
@@ -50,6 +59,20 @@ class ParentDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final taskProvider = context.watch<TaskProvider>();
+    final childProvider = context.watch<ChildProvider>();
+    final achievementProvider = context.watch<AchievementProvider>();
+
+    final totalTasks = taskProvider.tasks.length;
+
+    final submittedTasks = taskProvider.submittedTasks.length;
+
+    final totalReward = childProvider.totalReward;
+
+    final unlockedAchievements = achievementProvider.achievements
+        .where((achievement) => achievement.unlocked)
+        .length;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Parent Dashboard'),
@@ -69,6 +92,7 @@ class ParentDashboardScreen extends StatelessWidget {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
+
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -96,25 +120,28 @@ class ParentDashboardScreen extends StatelessWidget {
                 buildCard(
                   icon: Icons.task_alt,
                   title: 'Tổng nhiệm vụ',
-                  value: '12',
+                  value: '$totalTasks',
                   color: Colors.blue,
                 ),
+
                 buildCard(
                   icon: Icons.pending_actions,
                   title: 'Chờ xác nhận',
-                  value: '5',
+                  value: '$submittedTasks',
                   color: Colors.orange,
                 ),
+
                 buildCard(
                   icon: Icons.emoji_events,
                   title: 'Reward',
-                  value: '120K',
+                  value: '$totalReward đ',
                   color: Colors.green,
                 ),
+
                 buildCard(
                   icon: Icons.star,
                   title: 'Achievement',
-                  value: '8',
+                  value: '$unlockedAchievements',
                   color: Colors.purple,
                 ),
               ],
