@@ -58,7 +58,7 @@ class ChildHomeScreen extends StatelessWidget {
               context.read<TaskProvider>().submitTask(task.id);
 
               context.read<ActivityProvider>().addActivity(
-                title: 'Nhiệm vụ đã gửi',
+                title: 'Task Submitted',
                 description: task.title,
               );
             },

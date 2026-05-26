@@ -31,7 +31,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     );
 
     context.read<ActivityProvider>().addActivity(
-      title: 'Tạo nhiệm vụ',
+      title: 'Task Created',
       description: titleController.text.trim(),
     );
 

@@ -65,7 +65,7 @@ class VerifyTaskScreen extends StatelessWidget {
                                 );
 
                                 context.read<ActivityProvider>().addActivity(
-                                  title: 'Nhiệm vụ được xác nhận',
+                                  title: 'Task Approved',
                                   description: task.title,
                                 );
 
@@ -84,9 +84,17 @@ class VerifyTaskScreen extends StatelessWidget {
                                 final childProvider = context
                                     .read<ChildProvider>();
 
-                                context
+                                final unlockedAchievements = context
                                     .read<AchievementProvider>()
                                     .checkAchievements(childProvider.level);
+
+                                for (final achievement
+                                    in unlockedAchievements) {
+                                  context.read<ActivityProvider>().addActivity(
+                                    title: 'Achievement Unlocked',
+                                    description: achievement,
+                                  );
+                                }
                               },
                               child: const Text('Approve'),
                             ),
@@ -102,7 +110,7 @@ class VerifyTaskScreen extends StatelessWidget {
                                 );
 
                                 context.read<ActivityProvider>().addActivity(
-                                  title: 'Nhiệm vụ bị từ chối',
+                                  title: 'Task Rejected',
                                   description: task.title,
                                 );
                               },

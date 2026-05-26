@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/reward_model.dart';
 import '../../providers/reward_provider.dart';
+import '../../providers/activity_provider.dart';
 
 class ChildRewardScreen extends StatelessWidget {
   const ChildRewardScreen({super.key});
@@ -198,6 +199,11 @@ class ChildRewardScreen extends StatelessWidget {
             onPressed: canRedeem
                 ? () {
                     context.read<RewardProvider>().redeemReward(reward.id);
+
+                    context.read<ActivityProvider>().addActivity(
+                      title: 'Reward Redeemed',
+                      description: reward.title,
+                    );
                   }
                 : null,
             style: ElevatedButton.styleFrom(
