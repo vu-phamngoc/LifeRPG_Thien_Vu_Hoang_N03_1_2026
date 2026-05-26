@@ -5,6 +5,8 @@ import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
 import '../auth/role_select_screen.dart';
+import 'child_reward_screen.dart';
+import '../shared/achievement_screen.dart';
 
 class ChildHomeScreen extends StatelessWidget {
   const ChildHomeScreen({super.key});
@@ -66,7 +68,6 @@ class ChildHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tasks = context.watch<TaskProvider>().pendingTasks;
-
     final childProvider = context.watch<ChildProvider>();
 
     return Scaffold(
@@ -132,6 +133,44 @@ class ChildHomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AchievementScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.emoji_events),
+                    label: const Text('Achievement'),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ChildRewardScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.card_giftcard),
+                    label: const Text('Reward'),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 32),
