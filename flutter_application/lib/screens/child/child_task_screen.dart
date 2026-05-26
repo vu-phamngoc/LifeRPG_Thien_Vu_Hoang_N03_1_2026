@@ -91,6 +91,71 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
     );
   }
 
+  void showSubmitDialog(BuildContext context, TaskModel task) {
+    final noteController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Gửi nhiệm vụ'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Thêm ghi chú và minh chứng hoàn thành nhiệm vụ.'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Ghi chú của trẻ',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                height: 120,
+                width: double.infinity,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xfff3ecff),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xffd8c8ff), width: 2),
+                ),
+                child: const Text(
+                  '📸 Fake Proof Image',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () {
+                context.read<TaskProvider>().submitTask(
+                  task.id,
+                  childNote: noteController.text.trim().isEmpty
+                      ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
+                      : noteController.text.trim(),
+                  proofImage: 'fake_proof_image',
+                );
+
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Gửi'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget buildTaskCard(BuildContext context, TaskModel task) {
     final statusColor = getStatusColor(task.status);
 
@@ -218,7 +283,7 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
 
               child: FilledButton(
                 onPressed: () {
-                  context.read<TaskProvider>().submitTask(task.id);
+                  showSubmitDialog(context, task);
                 },
 
                 child: const Text('Submit Task'),

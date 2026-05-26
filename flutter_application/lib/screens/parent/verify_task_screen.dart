@@ -356,7 +356,12 @@ class VerifyTaskScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          _proofItem('Submitted Time', 'Just now'),
+                          _proofItem(
+                            'Submitted Time',
+                            task.submittedAt == null
+                                ? 'Just now'
+                                : '${task.submittedAt!.hour}:${task.submittedAt!.minute.toString().padLeft(2, '0')}',
+                          ),
                           const SizedBox(width: 12),
                           _proofItem('Task Difficulty', task.difficulty),
                         ],
@@ -373,7 +378,7 @@ class VerifyTaskScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(26),
                     border: Border.all(color: const Color(0xfff0e7fb)),
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -385,7 +390,7 @@ class VerifyTaskScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 10),
                       Text(
-                        '"Con đã hoàn thành nhiệm vụ được giao rồi ạ."',
+                        '"${task.childNote ?? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'}"',
                         style: TextStyle(color: Color(0xff6f6280), height: 1.7),
                       ),
                     ],

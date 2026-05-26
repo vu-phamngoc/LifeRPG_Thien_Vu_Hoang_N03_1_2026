@@ -13,6 +13,8 @@ class TaskModel {
   final DateTime createdAt;
   final DateTime? submittedAt;
   final DateTime? verifiedAt;
+  final String? proofImage;
+  final String? childNote;
 
   const TaskModel({
     required this.id,
@@ -27,6 +29,8 @@ class TaskModel {
     required this.createdAt,
     this.submittedAt,
     this.verifiedAt,
+    this.proofImage,
+    this.childNote,
   });
 
   TaskModel copyWith({
@@ -42,6 +46,8 @@ class TaskModel {
     DateTime? createdAt,
     DateTime? submittedAt,
     DateTime? verifiedAt,
+    String? proofImage,
+    String? childNote,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -56,6 +62,8 @@ class TaskModel {
       createdAt: createdAt ?? this.createdAt,
       submittedAt: submittedAt ?? this.submittedAt,
       verifiedAt: verifiedAt ?? this.verifiedAt,
+      proofImage: proofImage ?? this.proofImage,
+      childNote: childNote ?? this.childNote,
     );
   }
 

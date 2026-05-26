@@ -67,7 +67,7 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void submitTask(String taskId) {
+  void submitTask(String taskId, {String? childNote, String? proofImage}) {
     final index = _tasks.indexWhere((task) => task.id == taskId);
 
     if (index == -1) return;
@@ -75,6 +75,8 @@ class TaskProvider extends ChangeNotifier {
     _tasks[index] = _tasks[index].copyWith(
       status: TaskStatus.submitted,
       submittedAt: DateTime.now(),
+      childNote: childNote,
+      proofImage: proofImage,
     );
 
     notifyListeners();
