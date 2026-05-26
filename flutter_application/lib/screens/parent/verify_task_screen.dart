@@ -100,6 +100,11 @@ class VerifyTaskScreen extends StatelessWidget {
                                 context.read<TaskProvider>().rejectTask(
                                   task.id,
                                 );
+
+                                context.read<ActivityProvider>().addActivity(
+                                  title: 'Nhiệm vụ bị từ chối',
+                                  description: task.title,
+                                );
                               },
                               child: const Text('Reject'),
                             ),

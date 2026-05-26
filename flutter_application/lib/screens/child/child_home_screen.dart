@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
+import '../../providers/activity_provider.dart';
 import '../auth/role_select_screen.dart';
 import 'child_reward_screen.dart';
 import '../shared/achievement_screen.dart';
+import '../shared/activity_log_screen.dart';
 
 class ChildHomeScreen extends StatelessWidget {
   const ChildHomeScreen({super.key});
@@ -29,7 +31,6 @@ class ChildHomeScreen extends StatelessWidget {
             backgroundColor: color,
             child: const Icon(Icons.task, color: Colors.white),
           ),
-
           const SizedBox(width: 16),
 
           Expanded(
@@ -43,9 +44,7 @@ class ChildHomeScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   '+${task.expReward} EXP',
                   style: TextStyle(color: color, fontWeight: FontWeight.bold),
@@ -57,6 +56,11 @@ class ChildHomeScreen extends StatelessWidget {
           FilledButton(
             onPressed: () {
               context.read<TaskProvider>().submitTask(task.id);
+
+              context.read<ActivityProvider>().addActivity(
+                title: 'Nhiệm vụ đã gửi',
+                description: task.title,
+              );
             },
             child: const Text('Hoàn thành'),
           ),
@@ -89,7 +93,6 @@ class ChildHomeScreen extends StatelessWidget {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -101,7 +104,6 @@ class ChildHomeScreen extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(28),
               ),
-
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -113,16 +115,12 @@ class ChildHomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
                     '${childProvider.exp} / ${childProvider.maxExpForCurrentLevel} EXP',
                     style: const TextStyle(color: Colors.white70),
                   ),
-
                   const SizedBox(height: 20),
-
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: LinearProgressIndicator(
@@ -153,9 +151,7 @@ class ChildHomeScreen extends StatelessWidget {
                     label: const Text('Achievement'),
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () {
@@ -171,6 +167,24 @@ class ChildHomeScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ActivityLogScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.history),
+                label: const Text('Activity Log'),
+              ),
             ),
 
             const SizedBox(height: 32),
