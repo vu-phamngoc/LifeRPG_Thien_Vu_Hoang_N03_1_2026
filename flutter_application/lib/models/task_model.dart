@@ -67,6 +67,64 @@ class TaskModel {
     );
   }
 
+  factory TaskModel.fromMap(Map<String, dynamic> map, String documentId) {
+  return TaskModel(
+    id: documentId,
+    parentId: map['parentId'] ?? '',
+    childId: map['childId'] ?? '',
+    title: map['title'] ?? '',
+    description: map['description'] ?? '',
+    difficulty: map['difficulty'] ?? 'Dễ',
+    expReward: map['expReward'] ?? 0,
+    rewardAmount: map['rewardAmount'] ?? 0,
+    status: _parseStatus(map['status']),
+    createdAt:
+        (map['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
+    submittedAt:
+        map['submittedAt'] != null
+            ? (map['submittedAt'] as dynamic).toDate()
+            : null,
+    verifiedAt:
+        map['verifiedAt'] != null
+            ? (map['verifiedAt'] as dynamic).toDate()
+            : null,
+    proofImage: map['proofImage'],
+    childNote: map['childNote'],
+  );
+}
+
+Map<String, dynamic> toMap() {
+  return {
+    'id': id,
+    'parentId': parentId,
+    'childId': childId,
+    'title': title,
+    'description': description,
+    'difficulty': difficulty,
+    'expReward': expReward,
+    'rewardAmount': rewardAmount,
+    'status': status.name,
+    'createdAt': createdAt,
+    'submittedAt': submittedAt,
+    'verifiedAt': verifiedAt,
+    'proofImage': proofImage,
+    'childNote': childNote,
+  };
+}
+
+static TaskStatus _parseStatus(dynamic value) {
+  switch (value) {
+    case 'submitted':
+      return TaskStatus.submitted;
+    case 'approved':
+      return TaskStatus.approved;
+    case 'rejected':
+      return TaskStatus.rejected;
+    default:
+      return TaskStatus.pending;
+  }
+}
+
   String get statusText {
     switch (status) {
       case TaskStatus.pending:
