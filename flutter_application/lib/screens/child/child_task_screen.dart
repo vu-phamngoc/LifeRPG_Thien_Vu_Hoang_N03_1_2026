@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
+import '../../services/task_service.dart';
 
 class ChildTaskScreen extends StatefulWidget {
   const ChildTaskScreen({super.key});
@@ -137,19 +138,21 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
               child: const Text('Hủy'),
             ),
             FilledButton(
-              onPressed: () {
-                context.read<TaskProvider>().submitTask(
-                  task.id,
-                  childNote: noteController.text.trim().isEmpty
-                      ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
-                      : noteController.text.trim(),
-                  proofImage: 'fake_proof_image',
-                );
+  onPressed: () async {
+    await TaskService().submitTask(
+      taskId: task.id,
+      childNote: noteController.text.trim().isEmpty
+          ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
+          : noteController.text.trim(),
+      proofImage: 'fake_proof_image',
+    );
 
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Gửi'),
-            ),
+    if (!dialogContext.mounted) return;
+
+    Navigator.pop(dialogContext);
+  },
+  child: const Text('Gửi'),
+),
           ],
         );
       },
