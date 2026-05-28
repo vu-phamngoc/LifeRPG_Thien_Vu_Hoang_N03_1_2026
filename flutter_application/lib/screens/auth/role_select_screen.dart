@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../child/child_main_navigation_screen.dart';
 import '../parent/parent_main_navigation_screen.dart';
+import '../../services/user_service.dart';
 
 class RoleSelectScreen extends StatelessWidget {
   const RoleSelectScreen({super.key});
@@ -98,7 +99,11 @@ class RoleSelectScreen extends StatelessWidget {
                 icon: Icons.admin_panel_settings,
                 color: Colors.deepPurple,
 
-                onTap: () {
+                onTap: () async {
+                  await UserService().saveUserRole('parent');
+
+                  if (!context.mounted) return;
+
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -117,7 +122,11 @@ class RoleSelectScreen extends StatelessWidget {
                 icon: Icons.child_care,
                 color: Colors.orange,
 
-                onTap: () {
+                onTap: () async {
+                  await UserService().saveUserRole('child');
+
+                  if (!context.mounted) return;
+
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
