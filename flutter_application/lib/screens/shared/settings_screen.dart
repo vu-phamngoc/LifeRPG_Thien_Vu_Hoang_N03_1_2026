@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../services/auth_service.dart';
+import '../auth/login_screen.dart';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -132,9 +135,17 @@ class SettingsScreen extends StatelessWidget {
             buildSettingItem(
               icon: Icons.logout,
               title: 'Đăng xuất',
-              subtitle: 'Quay lại màn hình chọn vai trò',
-              onTap: () {
-                Navigator.pop(context);
+              subtitle: 'Đăng xuất khỏi tài khoản hiện tại',
+              onTap: () async {
+                await AuthService().logout();
+
+                if (!context.mounted) return;
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
               },
             ),
           ],

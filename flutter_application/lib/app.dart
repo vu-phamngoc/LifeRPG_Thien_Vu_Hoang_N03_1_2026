@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +8,7 @@ import 'providers/activity_provider.dart';
 import 'providers/achievement_provider.dart';
 import 'providers/reward_provider.dart';
 
+import 'screens/auth/login_screen.dart';
 import 'screens/auth/role_select_screen.dart';
 
 class LifeRPGApp extends StatelessWidget {
@@ -17,27 +19,21 @@ class LifeRPGApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TaskProvider()),
-
         ChangeNotifierProvider(create: (_) => ChildProvider()),
-
         ChangeNotifierProvider(create: (_) => ActivityProvider()),
-
         ChangeNotifierProvider(create: (_) => AchievementProvider()),
-
         ChangeNotifierProvider(create: (_) => RewardProvider()),
       ],
-
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-
         title: 'Life RPG',
-
         theme: ThemeData(
           useMaterial3: true,
           colorSchemeSeed: Colors.deepPurple,
         ),
-
-        home: const RoleSelectScreen(),
+        home: FirebaseAuth.instance.currentUser != null
+            ? const RoleSelectScreen()
+            : const LoginScreen(),
       ),
     );
   }
