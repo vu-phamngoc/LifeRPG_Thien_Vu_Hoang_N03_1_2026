@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'parent_dashboard_screen.dart';
-import 'create_task_screen.dart';
-import 'verify_task_screen.dart';
 import '../shared/activity_log_screen.dart';
+import 'create_task_screen.dart';
+import 'parent_dashboard_screen.dart';
 import 'parent_profile_screen.dart';
+import 'verify_task_screen.dart';
 
 class ParentMainNavigationScreen extends StatefulWidget {
   const ParentMainNavigationScreen({super.key});
@@ -29,7 +29,10 @@ class _ParentMainNavigationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: screens[currentIndex],
+      body: IndexedStack(
+        index: currentIndex,
+        children: screens,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
