@@ -7,6 +7,7 @@ import '../../providers/child_provider.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../../providers/reward_provider.dart';
+import '../../services/task_service.dart';
 
 class VerifyTaskScreen extends StatelessWidget {
   const VerifyTaskScreen({super.key});
@@ -116,40 +117,44 @@ class VerifyTaskScreen extends StatelessWidget {
     );
   }
 
-  void approveTask(BuildContext context, TaskModel task) {
-    context.read<TaskProvider>().approveTask(task.id);
+  Future<void> approveTask(BuildContext context, TaskModel task) async {
+  await TaskService().approveTask(task.id);
 
-    context.read<ChildProvider>().addExp(task.expReward);
-    context.read<ChildProvider>().addReward(task.rewardAmount);
-    context.read<RewardProvider>().addCoins(task.rewardAmount);
+  if (!context.mounted) return;
 
+  context.read<ChildProvider>().addExp(task.expReward);
+  context.read<ChildProvider>().addReward(task.rewardAmount);
+  context.read<RewardProvider>().addCoins(task.rewardAmount);
+
+  context.read<ActivityProvider>().addActivity(
+    title: 'Task Approved',
+    description: task.title,
+  );
+
+  final childProvider = context.read<ChildProvider>();
+
+  final unlockedAchievements = context
+      .read<AchievementProvider>()
+      .checkAchievements(childProvider.level);
+
+  for (final achievement in unlockedAchievements) {
     context.read<ActivityProvider>().addActivity(
-      title: 'Task Approved',
-      description: task.title,
-    );
-
-    final childProvider = context.read<ChildProvider>();
-
-    final unlockedAchievements = context
-        .read<AchievementProvider>()
-        .checkAchievements(childProvider.level);
-
-    for (final achievement in unlockedAchievements) {
-      context.read<ActivityProvider>().addActivity(
-        title: 'Achievement Unlocked',
-        description: achievement,
-      );
-    }
-  }
-
-  void rejectTask(BuildContext context, TaskModel task) {
-    context.read<TaskProvider>().rejectTask(task.id);
-
-    context.read<ActivityProvider>().addActivity(
-      title: 'Task Rejected',
-      description: task.title,
+      title: 'Achievement Unlocked',
+      description: achievement,
     );
   }
+}
+
+  Future<void> rejectTask(BuildContext context, TaskModel task) async {
+  await TaskService().rejectTask(task.id);
+
+  if (!context.mounted) return;
+
+  context.read<ActivityProvider>().addActivity(
+    title: 'Task Rejected',
+    description: task.title,
+  );
+}
 
   @override
   Widget build(BuildContext context) {

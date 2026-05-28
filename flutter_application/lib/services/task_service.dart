@@ -44,11 +44,35 @@ class TaskService {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
-            return TaskModel.fromMap(
-              doc.data(),
-              doc.id,
-            );
+            return TaskModel.fromMap(doc.data(), doc.id);
           }).toList();
         });
+  }
+
+  Future<void> approveTask(String taskId) async {
+    await _firestore.collection('tasks').doc(taskId).update({
+      'status': 'approved',
+      'verifiedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> rejectTask(String taskId) async {
+    await _firestore.collection('tasks').doc(taskId).update({
+      'status': 'rejected',
+      'verifiedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> submitTask({
+    required String taskId,
+    required String childNote,
+    required String proofImage,
+  }) async {
+    await _firestore.collection('tasks').doc(taskId).update({
+      'status': 'submitted',
+      'childNote': childNote,
+      'proofImage': proofImage,
+      'submittedAt': FieldValue.serverTimestamp(),
+    });
   }
 }
