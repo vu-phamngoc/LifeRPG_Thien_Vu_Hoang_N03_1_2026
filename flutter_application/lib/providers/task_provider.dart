@@ -1,33 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../models/task_model.dart';
+import '../services/task_service.dart';
 
 class TaskProvider extends ChangeNotifier {
-  final List<TaskModel> _tasks = [
-    TaskModel(
-      id: 'task_1',
-      parentId: 'parent_1',
-      childId: 'child_1',
-      title: 'Làm bài tập toán',
-      description: 'Hoàn thành bài tập toán trong vở bài tập.',
-      difficulty: 'Dễ',
-      expReward: 20,
-      rewardAmount: 5000,
-      status: TaskStatus.pending,
-      createdAt: DateTime.now(),
-    ),
-    TaskModel(
-      id: 'task_2',
-      parentId: 'parent_1',
-      childId: 'child_1',
-      title: 'Dọn phòng',
-      description: 'Sắp xếp lại bàn học và giường ngủ.',
-      difficulty: 'Trung bình',
-      expReward: 30,
-      rewardAmount: 10000,
-      status: TaskStatus.pending,
-      createdAt: DateTime.now(),
-    ),
-  ];
+  final TaskService _taskService = TaskService();
+
+  List<TaskModel> _tasks = [];
+  StreamSubscription<List<TaskModel>>? _tasksSubscription;
+
+  TaskProvider() {
+    listenToTasks();
+  }
 
   List<TaskModel> get tasks => List.unmodifiable(_tasks);
 
@@ -41,6 +27,15 @@ class TaskProvider extends ChangeNotifier {
 
   List<TaskModel> get approvedTasks {
     return _tasks.where((task) => task.status == TaskStatus.approved).toList();
+  }
+
+  void listenToTasks() {
+    _tasksSubscription?.cancel();
+
+    _tasksSubscription = _taskService.getTasksStream().listen((tasks) {
+      _tasks = tasks;
+      notifyListeners();
+    });
   }
 
   void addTask({
@@ -111,5 +106,11 @@ class TaskProvider extends ChangeNotifier {
   void deleteTask(String taskId) {
     _tasks.removeWhere((task) => task.id == taskId);
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _tasksSubscription?.cancel();
+    super.dispose();
   }
 }
