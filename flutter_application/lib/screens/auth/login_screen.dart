@@ -2,6 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/user_service.dart';
+import '../child/child_main_navigation_screen.dart';
+import '../parent/parent_main_navigation_screen.dart';
 import 'register_screen.dart';
 import 'role_select_screen.dart';
 
@@ -16,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
+  final _userService = UserService();
 
   bool _isLoading = false;
 
@@ -41,12 +45,30 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
 
+      final role = await _userService.getCurrentUserRole();
+
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-      );
+      if (role == 'parent') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ParentMainNavigationScreen(),
+          ),
+        );
+      } else if (role == 'child') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ChildMainNavigationScreen(),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       _showMessage(_getFirebaseErrorMessage(e.code));
     } catch (_) {

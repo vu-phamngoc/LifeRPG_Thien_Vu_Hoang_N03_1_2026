@@ -19,4 +19,22 @@ class UserService {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
+
+  Future<String?> getCurrentUserRole() async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return null;
+    }
+
+    final doc = await _firestore.collection('users').doc(user.uid).get();
+
+    if (!doc.exists) {
+      return null;
+    }
+
+    final data = doc.data();
+
+    return data?['role'] as String?;
+  }
 }
