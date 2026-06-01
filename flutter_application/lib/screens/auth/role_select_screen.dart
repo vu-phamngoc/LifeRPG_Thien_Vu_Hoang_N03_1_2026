@@ -100,7 +100,7 @@ class RoleSelectScreen extends StatelessWidget {
                 color: Colors.deepPurple,
 
                 onTap: () async {
-                  await UserService().saveUserRole('parent');
+                  await UserService().saveUserRoleIfNotExists('parent');
 
                   if (!context.mounted) return;
 
@@ -123,7 +123,7 @@ class RoleSelectScreen extends StatelessWidget {
                 color: Colors.orange,
 
                 onTap: () async {
-                  await UserService().saveUserRole('child');
+                  await UserService().saveUserRoleIfNotExists('child');
 
                   if (!context.mounted) return;
 

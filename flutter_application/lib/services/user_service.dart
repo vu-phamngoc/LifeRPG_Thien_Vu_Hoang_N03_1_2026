@@ -5,36 +5,64 @@ class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> saveUserRole(String role) async {
+  Future<void> saveUserRoleIfNotExists(String role) async {
     final user = _auth.currentUser;
 
     if (user == null) {
       throw Exception('User chưa đăng nhập');
     }
 
-    await _firestore.collection('users').doc(user.uid).set({
+    final userRef = _firestore.collection('users').doc(user.uid);
+    final userDoc = await userRef.get();
+
+    if (userDoc.exists && userDoc.data()?['role'] != null) {
+      return;
+    }
+
+    await userRef.set({
       'uid': user.uid,
       'email': user.email,
       'role': role,
+      'displayName': user.displayName ?? '',
+      'phone': user.phoneNumber ?? '',
+      'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    if (role == 'parent') {
+      await _firestore.collection('parents').doc(user.uid).set({
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': user.displayName ?? '',
+        'phone': user.phoneNumber ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+
+    if (role == 'child') {
+      await _firestore.collection('children').doc(user.uid).set({
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': user.displayName ?? '',
+        'phone': user.phoneNumber ?? '',
+        'level': 1,
+        'exp': 0,
+        'coins': 0,
+        'parentId': '',
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
   }
 
   Future<String?> getCurrentUserRole() async {
     final user = _auth.currentUser;
 
-    if (user == null) {
-      return null;
-    }
+    if (user == null) return null;
 
     final doc = await _firestore.collection('users').doc(user.uid).get();
 
-    if (!doc.exists) {
-      return null;
-    }
+    if (!doc.exists) return null;
 
-    final data = doc.data();
-
-    return data?['role'] as String?;
+    return doc.data()?['role'] as String?;
   }
 }
