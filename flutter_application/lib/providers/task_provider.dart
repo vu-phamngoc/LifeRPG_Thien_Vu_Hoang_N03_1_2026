@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/task_model.dart';
@@ -9,10 +10,22 @@ class TaskProvider extends ChangeNotifier {
   final TaskService _taskService = TaskService();
 
   List<TaskModel> _tasks = [];
+
+  StreamSubscription<User?>? _authSubscription;
   StreamSubscription<List<TaskModel>>? _tasksSubscription;
 
   TaskProvider() {
-    listenToTasks();
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      _tasksSubscription?.cancel();
+
+      if (user == null) {
+        _tasks = [];
+        notifyListeners();
+        return;
+      }
+
+      listenToTasks();
+    });
   }
 
   List<TaskModel> get tasks => List.unmodifiable(_tasks);
@@ -38,78 +51,24 @@ class TaskProvider extends ChangeNotifier {
     });
   }
 
-  void addTask({
-    required String title,
-    required String description,
-    required String difficulty,
-    required int expReward,
-    required int rewardAmount,
-  }) {
-    final task = TaskModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      parentId: 'parent_1',
-      childId: 'child_1',
-      title: title,
-      description: description,
-      difficulty: difficulty,
-      expReward: expReward,
-      rewardAmount: rewardAmount,
-      status: TaskStatus.pending,
-      createdAt: DateTime.now(),
-    );
-
-    _tasks.add(task);
-    notifyListeners();
-  }
-
   void submitTask(String taskId, {String? childNote, String? proofImage}) {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
+  final index = _tasks.indexWhere((task) => task.id == taskId);
 
-    if (index == -1) return;
+  if (index == -1) return;
 
-    _tasks[index] = _tasks[index].copyWith(
-      status: TaskStatus.submitted,
-      submittedAt: DateTime.now(),
-      childNote: childNote,
-      proofImage: proofImage,
-    );
+  _tasks[index] = _tasks[index].copyWith(
+    status: TaskStatus.submitted,
+    submittedAt: DateTime.now(),
+    childNote: childNote,
+    proofImage: proofImage,
+  );
 
-    notifyListeners();
-  }
-
-  void approveTask(String taskId) {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
-
-    if (index == -1) return;
-
-    _tasks[index] = _tasks[index].copyWith(
-      status: TaskStatus.approved,
-      verifiedAt: DateTime.now(),
-    );
-
-    notifyListeners();
-  }
-
-  void rejectTask(String taskId) {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
-
-    if (index == -1) return;
-
-    _tasks[index] = _tasks[index].copyWith(
-      status: TaskStatus.rejected,
-      verifiedAt: DateTime.now(),
-    );
-
-    notifyListeners();
-  }
-
-  void deleteTask(String taskId) {
-    _tasks.removeWhere((task) => task.id == taskId);
-    notifyListeners();
-  }
+  notifyListeners();
+}
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _tasksSubscription?.cancel();
     super.dispose();
   }

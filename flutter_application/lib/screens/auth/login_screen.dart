@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/task_provider.dart';
 
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
@@ -50,18 +53,22 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (role == 'parent') {
-        Navigator.pushReplacement(
+  context.read<TaskProvider>().listenToTasks();
+
+  Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => const ParentMainNavigationScreen(),
           ),
         );
       } else if (role == 'child') {
-        await _userService.ensureChildDocumentExists();
+  await _userService.ensureChildDocumentExists();
 
-        if (!mounted) return;
-        
-        Navigator.pushReplacement(
+  if (!mounted) return;
+
+  context.read<TaskProvider>().listenToTasks();
+
+  Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => const ChildMainNavigationScreen(),

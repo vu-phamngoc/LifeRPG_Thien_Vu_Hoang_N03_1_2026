@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:provider/provider.dart';
+import '../../providers/task_provider.dart';
+
 import '../shared/activity_log_screen.dart';
 import 'create_task_screen.dart';
 import 'parent_dashboard_screen.dart';
@@ -17,6 +20,16 @@ class ParentMainNavigationScreen extends StatefulWidget {
 class _ParentMainNavigationScreenState
     extends State<ParentMainNavigationScreen> {
   int currentIndex = 0;
+
+  @override
+void initState() {
+  super.initState();
+
+  Future.microtask(() {
+    if (!mounted) return;
+    context.read<TaskProvider>().listenToTasks();
+  });
+}
 
   final screens = const [
     ParentDashboardScreen(),

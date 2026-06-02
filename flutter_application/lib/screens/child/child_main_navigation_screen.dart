@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/task_provider.dart';
 
 import 'child_home_screen.dart';
 import 'child_task_screen.dart';
@@ -16,6 +19,16 @@ class ChildMainNavigationScreen extends StatefulWidget {
 
 class _ChildMainNavigationScreenState extends State<ChildMainNavigationScreen> {
   int currentIndex = 0;
+
+  @override
+void initState() {
+  super.initState();
+
+  Future.microtask(() {
+    if (!mounted) return;
+    context.read<TaskProvider>().listenToTasks();
+  });
+}
 
   final screens = const [
     ChildHomeScreen(),
