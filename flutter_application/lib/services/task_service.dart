@@ -46,10 +46,35 @@ class TaskService {
     }
 
     return _firestore
-      .collection('tasks')
-      .where('childId', isEqualTo: user.uid)
+      .collection('users')
+      .doc(user.uid)
       .snapshots()
-      .map((snapshot) {
+      .asyncExpand((userDoc) {
+
+    final role = userDoc.data()?['role'];
+
+    if (role == 'parent') {
+      return _firestore
+          .collection('tasks')
+          .where(
+            'parentId',
+            isEqualTo: user.uid,
+          )
+          .snapshots();
+    }
+
+    if (role == 'child') {
+      return _firestore
+          .collection('tasks')
+          .where(
+            'childId',
+            isEqualTo: user.uid,
+          )
+          .snapshots();
+    }
+
+    return const Stream.empty();
+  }).map((snapshot) {
     return snapshot.docs.map((doc) {
       return TaskModel.fromMap(
         doc.data(),
