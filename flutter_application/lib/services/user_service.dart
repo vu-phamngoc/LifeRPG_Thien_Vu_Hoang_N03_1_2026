@@ -95,4 +95,26 @@ class UserService {
 
     return doc.data();
   }
+
+  Future<void> linkChildToParent(String childId) async {
+  final parent = _auth.currentUser;
+
+  if (parent == null) {
+    throw Exception('Parent chưa đăng nhập');
+  }
+
+  final childRef =
+      _firestore.collection('children').doc(childId);
+
+  final childDoc = await childRef.get();
+
+  if (!childDoc.exists) {
+    throw Exception('Không tìm thấy Child');
+  }
+
+  await childRef.update({
+    'parentId': parent.uid,
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
 }
