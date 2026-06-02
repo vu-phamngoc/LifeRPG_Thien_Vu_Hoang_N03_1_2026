@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
 import 'role_select_screen.dart';
+import '../../services/user_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,6 +18,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
 
   final _authService = AuthService();
+  final _usernameController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -25,6 +28,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _usernameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -32,11 +37,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
+    final username = _usernameController.text.trim();
+    final phone = _phoneController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      _showMessage('Vui lòng nhập đầy đủ thông tin');
-      return;
-    }
+    if (username.isEmpty ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+       _showMessage('Vui lòng nhập đầy đủ thông tin');
+       return;
+      }
 
     if (password.length < 6) {
       _showMessage('Mật khẩu phải có ít nhất 6 ký tự');
@@ -54,6 +65,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await _authService.registerWithEmail(
         email: email,
         password: password,
+      );
+
+      await UserService().createUserProfile(
+        username: username,
+        phone: phone,
       );
 
       if (!mounted) return;
@@ -110,6 +126,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 32),
+            TextField(
+              controller: _usernameController,
+              decoration: InputDecoration(
+                labelText: 'Tên người dùng',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'Số điện thoại',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
