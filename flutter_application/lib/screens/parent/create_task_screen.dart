@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/activity_provider.dart';
 import '../../services/task_service.dart';
+import '../../providers/family_provider.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({super.key});
@@ -18,6 +19,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final rewardController = TextEditingController();
 
   String difficulty = 'Dễ';
+  String? selectedChildId;
   bool isLoading = false;
 
   @override
@@ -34,6 +36,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     final description = descriptionController.text.trim();
     final expReward = int.tryParse(expController.text.trim()) ?? 0;
     final rewardAmount = int.tryParse(rewardController.text.trim()) ?? 0;
+    
+    if (selectedChildId == null || selectedChildId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn Child')),
+      );
+      return;
+    }
 
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,7 +62,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         difficulty: difficulty,
         expReward: expReward,
         rewardAmount: rewardAmount,
-        childId: 'q8hSj6iq5RaCcJrwZ8ywzsqESxE3',
+        childId: selectedChildId!,
       );
 
       if (!mounted) return;
@@ -88,6 +97,15 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final familyProvider = context.watch<FamilyProvider>();
+
+    if (familyProvider.children.isEmpty) {
+      Future.microtask(() {
+        familyProvider.listenToLinkedChildren();
+      });
+    }  
+
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       appBar: AppBar(
@@ -98,6 +116,37 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
+            DropdownButtonFormField<String>(
+  initialValue: selectedChildId,
+  items: familyProvider.children.map(
+    (child) {
+      final childId = child['uid'] ?? '';
+      final childName = child['username']?.toString().isNotEmpty == true
+          ? child['username']
+          : child['email'] ?? childId;
+
+      return DropdownMenuItem<String>(
+        value: childId,
+        child: Text(childName),
+      );
+    },
+  ).toList(),
+  onChanged: isLoading
+      ? null
+      : (value) {
+          setState(() {
+            selectedChildId = value;
+          });
+        },
+  decoration: InputDecoration(
+    labelText: 'Chọn Child',
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+  ),
+),
+
+const SizedBox(height: 16),
             TextField(
               controller: titleController,
               enabled: !isLoading,
