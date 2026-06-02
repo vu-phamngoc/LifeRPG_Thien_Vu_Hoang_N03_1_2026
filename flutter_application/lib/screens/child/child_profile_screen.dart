@@ -5,9 +5,13 @@ import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/achievement_provider.dart';
-import '../auth/role_select_screen.dart';
 import '../shared/settings_screen.dart';
+import '../shared/edit_profile_screen.dart';
 import '../../services/user_service.dart';
+import '../../services/auth_service.dart';
+import '../auth/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 
 class ChildProfileScreen extends StatelessWidget {
   const ChildProfileScreen({super.key});
@@ -287,8 +291,11 @@ class ChildProfileScreen extends StatelessWidget {
         .where((achievement) => achievement.unlocked)
         .length;
     
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: UserService().getCurrentUserProfile(),
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+return FutureBuilder<Map<String, dynamic>?>(
+  key: ValueKey(currentUid),
+  future: UserService().getCurrentChildProfile(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Scaffold(
@@ -308,6 +315,9 @@ class ChildProfileScreen extends StatelessWidget {
 
         final phone =
             user['phone'] ?? '';
+        
+        final avatar =
+    user['avatar'] as String?;
 
     return Scaffold(
       backgroundColor: const Color(0xfffffdf8),
@@ -360,7 +370,16 @@ class ChildProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const Text('🧒', style: TextStyle(fontSize: 54)),
+                    CircleAvatar(
+  radius: 42,
+  backgroundColor: Colors.white.withValues(alpha: 0.25),
+  backgroundImage: avatar == null || avatar.isEmpty
+      ? null
+      : MemoryImage(base64Decode(avatar)),
+  child: avatar == null || avatar.isEmpty
+      ? const Text('🧒', style: TextStyle(fontSize: 54))
+      : null,
+),
                     const SizedBox(height: 14),
                     Text(
                       username,
@@ -505,7 +524,25 @@ class ChildProfileScreen extends StatelessWidget {
                 subtitle: 'Đổi nhân vật và giao diện',
               ),
               FilledButton(
-                onPressed: () {},
+                onPressed: () async {
+  final updated = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => EditProfileScreen(
+        username: username,
+        phone: phone,
+        role: 'child',
+        accentColorHex: 'orange',
+      ),
+    ),
+  );
+
+  if (updated == true && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cập nhật profile thành công')),
+    );
+  }
+},
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
                   backgroundColor: const Color(0xffff9f43),
@@ -513,13 +550,18 @@ class ChildProfileScreen extends StatelessWidget {
                 child: const Text('Edit Profile'),
               ),
               const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-                  );
-                },
+             OutlinedButton(
+  onPressed: () async {
+    await AuthService().logout();
+
+    if (!context.mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  },
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(54),
                   foregroundColor: const Color(0xffd94343),

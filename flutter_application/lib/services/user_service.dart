@@ -178,4 +178,81 @@ Stream<List<Map<String, dynamic>>> getLinkedChildrenStream() {
     }).toList();
   });
 }
+
+Future<void> updateCurrentUserProfile({
+  required String username,
+  required String phone,
+  String? avatar,
+}) async {
+  final user = _auth.currentUser;
+
+  if (user == null) {
+    throw Exception('User chưa đăng nhập');
+  }
+
+  final userRef = _firestore.collection('users').doc(user.uid);
+
+  await userRef.set({
+  'username': username,
+  'phone': phone,
+  'avatar': ?avatar,
+  'updatedAt': FieldValue.serverTimestamp(),
+}, SetOptions(merge: true));
+
+  final userDoc = await userRef.get();
+  final role = userDoc.data()?['role'];
+
+  if (role == 'parent') {
+    await _firestore.collection('parents').doc(user.uid).set({
+  'username': username,
+  'phone': phone,
+  'avatar': ?avatar,
+  'updatedAt': FieldValue.serverTimestamp(),
+}, SetOptions(merge: true));
+  }
+
+  if (role == 'child') {
+    await _firestore.collection('children').doc(user.uid).set({
+  'username': username,
+  'phone': phone,
+  'avatar': ?avatar,
+  'updatedAt': FieldValue.serverTimestamp(),
+}, SetOptions(merge: true));
+  }
+}
+Future<Map<String, dynamic>?> getCurrentParentProfile() async {
+  final user = _auth.currentUser;
+
+  if (user == null) return null;
+
+  final parentDoc =
+      await _firestore.collection('parents').doc(user.uid).get();
+
+  if (parentDoc.exists) {
+    return parentDoc.data();
+  }
+
+  final userDoc =
+      await _firestore.collection('users').doc(user.uid).get();
+
+  return userDoc.data();
+}
+
+Future<Map<String, dynamic>?> getCurrentChildProfile() async {
+  final user = _auth.currentUser;
+
+  if (user == null) return null;
+
+  final childDoc =
+      await _firestore.collection('children').doc(user.uid).get();
+
+  if (childDoc.exists) {
+    return childDoc.data();
+  }
+
+  final userDoc =
+      await _firestore.collection('users').doc(user.uid).get();
+
+  return userDoc.data();
+}
 }
