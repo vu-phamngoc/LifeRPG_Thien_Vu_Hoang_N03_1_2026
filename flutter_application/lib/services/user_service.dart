@@ -95,6 +95,45 @@ class UserService {
 
     return doc.data();
   }
+  
+  Future<void> ensureChildDocumentExists() async {
+  final user = _auth.currentUser;
+
+  if (user == null) {
+    throw Exception('User chưa đăng nhập');
+  }
+
+  final userDoc =
+      await _firestore.collection('users').doc(user.uid).get();
+
+  final userData = userDoc.data();
+
+  if (userData == null || userData['role'] != 'child') {
+    return;
+  }
+
+  final childRef =
+      _firestore.collection('children').doc(user.uid);
+
+  final childDoc = await childRef.get();
+
+  if (childDoc.exists) {
+    return;
+  }
+
+  await childRef.set({
+    'uid': user.uid,
+    'email': user.email,
+    'username': userData['username'] ?? '',
+    'phone': userData['phone'] ?? '',
+    'level': 1,
+    'exp': 0,
+    'coins': 0,
+    'parentId': '',
+    'createdAt': FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
 
   Future<void> linkChildToParent(String childId) async {
   final parent = _auth.currentUser;
@@ -115,6 +154,28 @@ class UserService {
   await childRef.update({
     'parentId': parent.uid,
     'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
+
+Stream<List<Map<String, dynamic>>> getLinkedChildrenStream() {
+  final parent = _auth.currentUser;
+
+  if (parent == null) {
+    throw Exception('Parent chưa đăng nhập');
+  }
+
+  return _firestore
+      .collection('children')
+      .where('parentId', isEqualTo: parent.uid)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'uid': doc.id,
+        ...data,
+      };
+    }).toList();
   });
 }
 }

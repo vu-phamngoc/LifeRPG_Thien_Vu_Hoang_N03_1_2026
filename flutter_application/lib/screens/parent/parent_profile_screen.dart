@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
-import '../auth/role_select_screen.dart';
 import '../shared/settings_screen.dart';
 import '../../services/user_service.dart';
+import '../../providers/family_provider.dart';
+import '../../services/auth_service.dart';
+import '../auth/login_screen.dart';
 
 class ParentProfileScreen extends StatelessWidget {
   const ParentProfileScreen({super.key});
@@ -75,7 +77,11 @@ class ParentProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget sectionTitle(String title, {String? action}) {
+  Widget sectionTitle(
+    String title, {
+    String? action,
+    VoidCallback? onActionTap,
+    }) {
     return Padding(
       padding: const EdgeInsets.only(top: 22, bottom: 12),
       child: Row(
@@ -90,18 +96,93 @@ class ParentProfileScreen extends StatelessWidget {
             ),
           ),
           if (action != null)
-            Text(
-              action,
-              style: const TextStyle(
-                color: Color(0xff7048ff),
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
+            GestureDetector(
+              onTap: onActionTap,
+              child: Text(
+                action,
+                style: const TextStyle(
+                  color: Color(0xff7048ff),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
         ],
       ),
     );
   }
+
+  void showAddChildDialog(BuildContext context) {
+  final childIdController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Add Child'),
+        content: TextField(
+          controller: childIdController,
+          decoration: const InputDecoration(
+            labelText: 'Child UID',
+            hintText: 'Nhập UID tài khoản Child',
+          ),
+        ),
+
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Hủy'),
+          ),
+
+          FilledButton(
+            onPressed: () async {
+              final childId =
+                  childIdController.text.trim();
+
+              if (childId.isEmpty) {
+                return;
+              }
+
+              try {
+                await context
+                    .read<FamilyProvider>()
+                    .linkChild(childId);
+
+                if (!context.mounted) return;
+
+                Navigator.pop(dialogContext);
+
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Liên kết Child thành công',
+                    ),
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Lỗi: $e',
+                    ),
+                  ),
+                );
+              }
+            },
+
+            child: const Text('Liên kết'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Widget infoRow(String label, String value) {
     return Container(
@@ -269,6 +350,13 @@ class ParentProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final taskProvider = context.watch<TaskProvider>();
     final childProvider = context.watch<ChildProvider>();
+    final familyProvider = context.watch<FamilyProvider>();
+
+    if (familyProvider.children.isEmpty) {
+      Future.microtask(() {
+        familyProvider.listenToLinkedChildren();
+      });
+    }
 
     return FutureBuilder<Map<String, dynamic>?>(
       future: UserService().getCurrentUserProfile(),
@@ -365,7 +453,11 @@ class ParentProfileScreen extends StatelessWidget {
               const SizedBox(height: 22),
               Row(
                 children: [
-                  statCard(icon: '👦', value: '2', label: 'Children'),
+                  statCard(
+                    icon: '👦', 
+                    value: '${familyProvider.children.length}',
+                    label: 'Children',
+                  ),
                   const SizedBox(width: 12),
                   statCard(
                     icon: '📋',
@@ -397,18 +489,23 @@ class ParentProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              sectionTitle('My Children', action: 'Add Child'),
-              childCard(
-                icon: '🧒',
-                name: 'Minh Nguyen',
-                level: 'LV ${childProvider.level}',
-                progress: childProvider.expProgress.clamp(0, 1),
+              sectionTitle(
+                'My Children', 
+                action: 'Add Child',
+                onActionTap: () {
+                  showAddChildDialog(context);
+                },
               ),
-              childCard(
-                icon: '👧',
-                name: 'An Nguyen',
-                level: 'LV 3',
-                progress: 0.48,
+
+              ...familyProvider.children.map(
+                (child) {
+                  return childCard(
+                    icon: '🧒',
+                    name: child['username'] ?? 'Child',
+                    level: 'LV ${child['level'] ?? 1}',
+                    progress: ((child['exp'] ?? 0) / 100).clamp(0, 1),
+                  );
+                },
               ),
               sectionTitle('Settings'),
               settingCard(
@@ -431,10 +528,15 @@ class ParentProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
+                onPressed: () async {
+                  await AuthService().logout();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
                   );
                 },
                 style: OutlinedButton.styleFrom(

@@ -14,6 +14,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/role_select_screen.dart';
 import 'screens/parent/parent_main_navigation_screen.dart';
 import 'screens/child/child_main_navigation_screen.dart';
+import 'providers/family_provider.dart';
 
 class LifeRPGApp extends StatelessWidget {
   const LifeRPGApp({super.key});
@@ -47,6 +48,7 @@ class LifeRPGApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ActivityProvider()),
         ChangeNotifierProvider(create: (_) => AchievementProvider()),
         ChangeNotifierProvider(create: (_) => RewardProvider()),
+        ChangeNotifierProvider(create: (_) => FamilyProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

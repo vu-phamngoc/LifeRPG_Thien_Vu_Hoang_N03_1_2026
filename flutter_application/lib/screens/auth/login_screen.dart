@@ -57,6 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else if (role == 'child') {
+        await _userService.ensureChildDocumentExists();
+
+        if (!mounted) return;
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
