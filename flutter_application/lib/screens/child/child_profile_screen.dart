@@ -7,6 +7,7 @@ import '../../providers/reward_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../auth/role_select_screen.dart';
 import '../shared/settings_screen.dart';
+import '../../services/user_service.dart';
 
 class ChildProfileScreen extends StatelessWidget {
   const ChildProfileScreen({super.key});
@@ -285,6 +286,28 @@ class ChildProfileScreen extends StatelessWidget {
     final unlockedAchievements = achievementProvider.achievements
         .where((achievement) => achievement.unlocked)
         .length;
+    
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: UserService().getCurrentUserProfile(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final user = snapshot.data!;
+        
+        final username =
+            user['username'] ?? 'Hero';
+
+        final email =
+            user['email'] ?? '';
+
+        final phone =
+            user['phone'] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xfffffdf8),
@@ -339,9 +362,9 @@ class ChildProfileScreen extends StatelessWidget {
                   children: [
                     const Text('🧒', style: TextStyle(fontSize: 54)),
                     const SizedBox(height: 14),
-                    const Text(
-                      'Minh Nguyen',
-                      style: TextStyle(
+                    Text(
+                      username,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 25,
                         fontWeight: FontWeight.bold,
@@ -463,8 +486,8 @@ class ChildProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    infoRow('Parent', 'Nguyễn Hoàng Thiên'),
-                    infoRow('Age', '10 years old'),
+                    infoRow('Email', email),
+                    infoRow('Phone', phone),
                     infoRow('Role', 'Child'),
                     infoRow('Joined', 'May 2026'),
                   ],
@@ -507,26 +530,30 @@ class ChildProfileScreen extends StatelessWidget {
               ),
             ],
           ),
+          ),
         ),
-      ),
-    );
+      );
+    },
+  );
+
   }
 
   Widget _levelBadge(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.24),
-        borderRadius: BorderRadius.circular(999),
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.24),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w900,
+        fontSize: 13,
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
+
 }

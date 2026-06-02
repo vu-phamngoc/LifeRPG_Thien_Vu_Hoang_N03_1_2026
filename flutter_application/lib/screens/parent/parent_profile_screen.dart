@@ -5,6 +5,7 @@ import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
 import '../auth/role_select_screen.dart';
 import '../shared/settings_screen.dart';
+import '../../services/user_service.dart';
 
 class ParentProfileScreen extends StatelessWidget {
   const ParentProfileScreen({super.key});
@@ -269,6 +270,28 @@ class ParentProfileScreen extends StatelessWidget {
     final taskProvider = context.watch<TaskProvider>();
     final childProvider = context.watch<ChildProvider>();
 
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: UserService().getCurrentUserProfile(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final user = snapshot.data!;
+
+        final username =
+            user['username'] ?? 'User';
+
+        final email =
+            user['email'] ?? '';
+
+        final phone =
+            user['phone'] ?? '';
+
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(
@@ -318,12 +341,12 @@ class ParentProfileScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(32),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
                     Text('👨‍👧', style: TextStyle(fontSize: 50)),
                     SizedBox(height: 14),
                     Text(
-                      'Nguyễn Hoàng Thiên',
+                      username,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -367,8 +390,8 @@ class ParentProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    infoRow('Email', 'parent@email.com'),
-                    infoRow('Phone', '+84 987 654 321'),
+                    infoRow('Email', email),
+                    infoRow('Phone', phone),
                     infoRow('Role', 'Parent'),
                     infoRow('Joined', 'May 2026'),
                   ],
@@ -427,5 +450,7 @@ class ParentProfileScreen extends StatelessWidget {
         ),
       ),
     );
-  }
+  },
+  );
+}
 }
