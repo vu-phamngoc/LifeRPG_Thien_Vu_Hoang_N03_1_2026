@@ -39,16 +39,25 @@ class TaskService {
   }
 
   Stream<List<TaskModel>> getTasksStream() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return const Stream.empty();
+    }
+
     return _firestore
-        .collection('tasks')
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return TaskModel.fromMap(doc.data(), doc.id);
-          }).toList();
-        });
-  }
+      .collection('tasks')
+      .where('childId', isEqualTo: user.uid)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      return TaskModel.fromMap(
+        doc.data(),
+        doc.id,
+      );
+    }).toList();
+  });
+}
 
   Future<void> approveTask(String taskId) async {
     await _firestore.collection('tasks').doc(taskId).update({
