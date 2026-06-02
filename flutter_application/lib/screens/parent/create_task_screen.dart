@@ -53,6 +53,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         difficulty: difficulty,
         expReward: expReward,
         rewardAmount: rewardAmount,
+        childId: 'q8hSj6iq5RaCcJrwZ8ywzsqESxE3',
       );
 
       if (!mounted) return;

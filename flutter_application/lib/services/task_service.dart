@@ -13,6 +13,7 @@ class TaskService {
     required String difficulty,
     required int expReward,
     required int rewardAmount,
+    required String childId,
   }) async {
     final user = _auth.currentUser;
 
@@ -27,7 +28,7 @@ class TaskService {
       'expReward': expReward,
       'rewardAmount': rewardAmount,
       'parentId': user.uid,
-      'childId': '',
+      'childId': childId,
       'status': 'pending',
       'proofImage': null,
       'childNote': null,
