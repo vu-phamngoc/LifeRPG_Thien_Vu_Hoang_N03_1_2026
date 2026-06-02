@@ -9,8 +9,23 @@ import '../../providers/achievement_provider.dart';
 import '../../providers/reward_provider.dart';
 import '../../services/task_service.dart';
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 class VerifyTaskScreen extends StatelessWidget {
   const VerifyTaskScreen({super.key});
+
+  Uint8List? decodeProofImage(String? image) {
+  if (image == null || image.isEmpty) {
+    return null;
+  }
+
+  try {
+    return base64Decode(image);
+  } catch (_) {
+    return null;
+  }
+}
 
   Widget topButton(String text, VoidCallback onTap) {
     return SizedBox(
@@ -356,7 +371,28 @@ class VerifyTaskScreen extends StatelessWidget {
                             width: 2,
                           ),
                         ),
-                        child: const Text('📸', style: TextStyle(fontSize: 70)),
+                        child: Builder(
+  builder: (_) {
+    final imageBytes = decodeProofImage(task.proofImage);
+
+    if (imageBytes == null) {
+      return const Text(
+        '📸',
+        style: TextStyle(fontSize: 70),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Image.memory(
+        imageBytes,
+        width: double.infinity,
+        height: 220,
+        fit: BoxFit.cover,
+      ),
+    );
+  },
+),
                       ),
                       const SizedBox(height: 16),
                       Row(

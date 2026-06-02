@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../services/task_service.dart';
+import 'dart:convert';
 
 class ChildTaskScreen extends StatefulWidget {
   const ChildTaskScreen({super.key});
@@ -14,6 +16,23 @@ class ChildTaskScreen extends StatefulWidget {
 
 class _ChildTaskScreenState extends State<ChildTaskScreen> {
   String selectedFilter = 'All';
+
+    XFile? selectedImage;
+
+  Future<void> pickProofImage(ImageSource source) async {
+    final picker = ImagePicker();
+
+    final image = await picker.pickImage(
+      source: source,
+      imageQuality: 70,
+    );
+
+    if (image == null) return;
+
+    setState(() {
+      selectedImage = image;
+    });
+  }
 
   Color getStatusColor(TaskStatus status) {
     switch (status) {
@@ -115,19 +134,45 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
               ),
               const SizedBox(height: 16),
               Container(
-                height: 120,
-                width: double.infinity,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xfff3ecff),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xffd8c8ff), width: 2),
-                ),
-                child: const Text(
-                  '📸 Fake Proof Image',
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
+  width: double.infinity,
+  padding: const EdgeInsets.all(14),
+  decoration: BoxDecoration(
+    color: const Color(0xfff3ecff),
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: const Color(0xffd8c8ff), width: 2),
+  ),
+  child: Column(
+    children: [
+      Text(
+        selectedImage == null
+            ? 'Chưa chọn ảnh minh chứng'
+            : 'Đã chọn: ${selectedImage!.name}',
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => pickProofImage(ImageSource.gallery),
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Thư viện'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => pickProofImage(ImageSource.camera),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('Camera'),
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
             ],
           ),
           actions: [
@@ -139,15 +184,32 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
             ),
             FilledButton(
   onPressed: () async {
+    if (selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn hoặc chụp ảnh minh chứng.'),
+        ),
+      );
+      return;
+    }
+
+    final imageBytes = await selectedImage!.readAsBytes();
+
+    final proofImageUrl = base64Encode(imageBytes);
+
     await TaskService().submitTask(
       taskId: task.id,
       childNote: noteController.text.trim().isEmpty
           ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
           : noteController.text.trim(),
-      proofImage: 'fake_proof_image',
+      proofImage: proofImageUrl,
     );
 
     if (!dialogContext.mounted) return;
+
+    setState(() {
+      selectedImage = null;
+    });
 
     Navigator.pop(dialogContext);
   },
