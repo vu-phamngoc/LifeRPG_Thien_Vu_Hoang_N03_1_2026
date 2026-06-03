@@ -155,16 +155,57 @@ currentLevel =
       },
       SetOptions(merge: true),
     );
-    return newLevel; // thêm ở đây
+        return newLevel;
+  }).then((newLevel) async {
+
+    final taskDoc =
+        await _firestore.collection('tasks').doc(taskId).get();
+
+    final taskData = taskDoc.data();
+
+    if (taskData != null) {
+      final childId = taskData['childId'];
+
+      if (childId != null) {
+        await NotificationService().createNotificationRequest(
+          receiverId: childId,
+          title: 'Nhiệm vụ đã được duyệt',
+          body: 'Phụ huynh đã duyệt nhiệm vụ của bạn.',
+          type: 'task_approved',
+          taskId: taskId,
+        );
+      }
+    }
+
+    return newLevel;
   });
 }
 
   Future<void> rejectTask(String taskId) async {
-    await _firestore.collection('tasks').doc(taskId).update({
-      'status': 'rejected',
-      'verifiedAt': FieldValue.serverTimestamp(),
-    });
+  await _firestore.collection('tasks').doc(taskId).update({
+    'status': 'rejected',
+    'verifiedAt': FieldValue.serverTimestamp(),
+  });
+
+  final taskDoc =
+      await _firestore.collection('tasks').doc(taskId).get();
+
+  final taskData = taskDoc.data();
+
+  if (taskData != null) {
+    final childId = taskData['childId'];
+
+    if (childId != null) {
+      await NotificationService().createNotificationRequest(
+        receiverId: childId,
+        title: 'Nhiệm vụ bị từ chối',
+        body: 'Phụ huynh đã từ chối nhiệm vụ.',
+        type: 'task_rejected',
+        taskId: taskId,
+      );
+    }
   }
+}
 
   Future<void> submitTask({
     required String taskId,
