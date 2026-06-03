@@ -149,9 +149,10 @@ debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
   rewardProvider.addCoins(task.rewardAmount);
 
   activityProvider.addActivity(
-    title: 'Task Approved',
-    description: task.title,
-  );
+  childId: task.childId,
+  title: 'Task Approved',
+  description: task.title,
+);
 
   final unlockedAchievements =
       await achievementProvider.checkAchievements(
@@ -162,9 +163,10 @@ debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
 
   for (final achievement in unlockedAchievements) {
     activityProvider.addActivity(
-      title: 'Achievement Unlocked',
-      description: achievement,
-    );
+  childId: task.childId,
+  title: 'Achievement Unlocked',
+  description: achievement,
+);
   }
 }
 
@@ -174,9 +176,10 @@ debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
   if (!context.mounted) return;
 
   context.read<ActivityProvider>().addActivity(
-    title: 'Task Rejected',
-    description: task.title,
-  );
+  childId: task.childId,
+  title: 'Task Rejected',
+  description: task.title,
+);
 }
 
   @override

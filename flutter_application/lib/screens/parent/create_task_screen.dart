@@ -68,9 +68,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       if (!mounted) return;
 
       context.read<ActivityProvider>().addActivity(
-        title: 'Task Created',
-        description: title,
-      );
+  childId: selectedChildId!,
+  title: 'Task Created',
+  description: title,
+);
 
       titleController.clear();
       descriptionController.clear();

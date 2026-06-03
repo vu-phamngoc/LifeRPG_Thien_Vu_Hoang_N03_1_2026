@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../providers/activity_provider.dart';
 
@@ -204,8 +205,21 @@ class ActivityLogScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final activities = context.watch<ActivityProvider>().activities;
+Widget build(BuildContext context) {
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user != null) {
+    Future.microtask(() {
+      if (context.mounted) {
+        context
+            .read<ActivityProvider>()
+            .listenActivities(user.uid);
+      }
+    });
+  }
+
+  final activities =
+      context.watch<ActivityProvider>().activities;
 
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
@@ -391,7 +405,8 @@ class ActivityLogScreen extends StatelessWidget {
                             title: activity.title,
                             description: activity.description,
                             tag: 'ACTIVITY',
-                            time: 'Just now',
+                            time:
+    '${activity.createdAt.hour}:${activity.createdAt.minute.toString().padLeft(2, '0')}',
                             amount: '+0 EXP',
                             iconBg: const Color(0xfff1e9ff),
                           );

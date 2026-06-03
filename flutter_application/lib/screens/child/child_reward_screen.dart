@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../models/reward_model.dart';
 import '../../providers/reward_provider.dart';
@@ -200,10 +201,13 @@ class ChildRewardScreen extends StatelessWidget {
                 ? () {
                     context.read<RewardProvider>().redeemReward(reward.id);
 
-                    context.read<ActivityProvider>().addActivity(
-                      title: 'Reward Redeemed',
-                      description: reward.title,
-                    );
+                    final childId = FirebaseAuth.instance.currentUser!.uid;
+
+context.read<ActivityProvider>().addActivity(
+  childId: childId,
+  title: 'Reward Redeemed',
+  description: reward.title,
+);
                   }
                 : null,
             style: ElevatedButton.styleFrom(
