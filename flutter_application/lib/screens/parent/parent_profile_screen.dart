@@ -355,11 +355,13 @@ class ParentProfileScreen extends StatelessWidget {
     final childProvider = context.watch<ChildProvider>();
     final familyProvider = context.watch<FamilyProvider>();
 
-    if (familyProvider.children.isEmpty) {
-      Future.microtask(() {
-        familyProvider.listenToLinkedChildren();
-      });
+   if (!familyProvider.hasChildren) {
+  Future.microtask(() {
+    if (context.mounted) {
+      context.read<FamilyProvider>().listenToLinkedChildren();
     }
+  });
+}
 
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
@@ -368,14 +370,30 @@ return FutureBuilder<Map<String, dynamic>?>(
   future: UserService().getCurrentParentProfile(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
+  return const Scaffold(
+    body: Center(
+      child: CircularProgressIndicator(),
+    ),
+  );
+}
 
-        final user = snapshot.data!;
+if (snapshot.hasError) {
+  return Scaffold(
+    body: Center(
+      child: Text('Lỗi tải profile: ${snapshot.error}'),
+    ),
+  );
+}
+
+if (snapshot.data == null) {
+  return const Scaffold(
+    body: Center(
+      child: Text('Không tìm thấy thông tin Parent Profile'),
+    ),
+  );
+}
+
+final user = snapshot.data!;
 
         final username =
             user['username'] ?? 'User';

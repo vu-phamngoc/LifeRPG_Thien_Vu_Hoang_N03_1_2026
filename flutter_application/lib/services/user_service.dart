@@ -223,17 +223,22 @@ Future<void> updateCurrentUserProfile({
 Future<Map<String, dynamic>?> getCurrentParentProfile() async {
   final user = _auth.currentUser;
 
-  if (user == null) return null;
-
-  final parentDoc =
-      await _firestore.collection('parents').doc(user.uid).get();
-
-  if (parentDoc.exists) {
-    return parentDoc.data();
+  if (user == null) {
+    return null;
   }
 
   final userDoc =
       await _firestore.collection('users').doc(user.uid).get();
+
+  if (!userDoc.exists) {
+    return {
+      'uid': user.uid,
+      'email': user.email ?? '',
+      'username': 'Parent',
+      'phone': '',
+      'role': 'parent',
+    };
+  }
 
   return userDoc.data();
 }

@@ -29,8 +29,9 @@ service cloud.firestore {
   allow update: if isOwner(userId) || isParent();
 
       match /rewards/{rewardId} {
-        allow read, write: if isOwner(userId);
-      }
+  allow read: if isOwner(userId) || isParent();
+  allow create, update, delete: if isOwner(userId) || isParent();
+}
 
       match /achievements/{achievementId} {
         allow read, write: if isOwner(userId) || isParent();
@@ -44,6 +45,14 @@ service cloud.firestore {
     match /children/{childId} {
       allow read, write: if isOwner(childId) || isParent();
     }
+
+    match /parents/{parentId} {
+  allow read, write: if isOwner(parentId);
+
+  match /children/{childId} {
+    allow read, write: if isOwner(parentId);
+  }
+}
 
     match /tasks/{taskId} {
       allow read: if signedIn() &&

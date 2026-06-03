@@ -60,9 +60,32 @@ class ParentRewardManagementScreen extends StatelessWidget {
                 final icon = iconController.text.trim();
                 final price = int.tryParse(priceController.text.trim()) ?? 0;
 
-                if (title.isEmpty || description.isEmpty || price <= 0) {
-                  return;
-                }
+                if (title.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Vui lòng nhập tên reward'),
+    ),
+  );
+  return;
+}
+
+if (description.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Vui lòng nhập mô tả reward'),
+    ),
+  );
+  return;
+}
+
+if (price <= 0) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Giá coin phải lớn hơn 0'),
+    ),
+  );
+  return;
+}
 
                 final provider = context.read<RewardProvider>();
 

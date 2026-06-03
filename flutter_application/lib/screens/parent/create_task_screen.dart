@@ -51,6 +51,33 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       return;
     }
 
+    if (description.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Vui lòng nhập mô tả nhiệm vụ'),
+    ),
+  );
+  return;
+}
+
+if (expReward <= 0) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('EXP phải lớn hơn 0'),
+    ),
+  );
+  return;
+}
+
+if (rewardAmount < 0) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Tiền thưởng không được âm'),
+    ),
+  );
+  return;
+}
+
     setState(() {
       isLoading = true;
     });

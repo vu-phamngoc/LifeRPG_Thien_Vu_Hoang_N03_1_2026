@@ -74,12 +74,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final username = usernameController.text.trim();
     final phone = phoneController.text.trim();
 
-    if (username.isEmpty || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ username và phone')),
-      );
-      return;
-    }
+    if (username.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Vui lòng nhập username')),
+  );
+  return;
+}
+
+if (phone.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Vui lòng nhập số điện thoại')),
+  );
+  return;
+}
+
+final phoneRegex = RegExp(r'^[0-9]{9,11}$');
+
+if (!phoneRegex.hasMatch(phone)) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Số điện thoại phải gồm 9 đến 11 chữ số'),
+    ),
+  );
+  return;
+}
 
     setState(() {
       isSaving = true;
