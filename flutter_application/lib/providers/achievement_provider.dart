@@ -25,6 +25,16 @@ class AchievementProvider extends ChangeNotifier {
       notifyListeners();
     });
   }
+  void listenAchievementsForChild(String childId) {
+  _achievementSubscription?.cancel();
+
+  _achievementSubscription = _achievementService
+      .getAchievementsStreamForChild(childId)
+      .listen((achievements) {
+    _achievements = achievements;
+    notifyListeners();
+  });
+}
 
   Future<List<String>> checkAchievements({
   required String childId,

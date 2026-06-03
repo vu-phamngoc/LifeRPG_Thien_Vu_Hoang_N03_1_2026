@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/achievement_provider.dart';
 
 class AchievementScreen extends StatelessWidget {
   const AchievementScreen({super.key});
@@ -195,8 +199,27 @@ class AchievementScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+Widget build(BuildContext context) {
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user != null) {
+    Future.microtask(() {
+      if (context.mounted) {
+        context
+            .read<AchievementProvider>()
+            .listenAchievementsForChild(user.uid);
+      }
+    });
+  }
+
+  final achievements = context.watch<AchievementProvider>().achievements;
+  final unlockedCount =
+      achievements.where((achievement) => achievement.unlocked).length;
+  final totalCount = achievements.length;
+  final lockedCount = totalCount - unlockedCount;
+  final progress = totalCount == 0 ? 0.0 : unlockedCount / totalCount;
+
+  return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(
         child: Column(
@@ -252,7 +275,7 @@ class AchievementScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
@@ -265,7 +288,7 @@ class AchievementScreen extends StatelessWidget {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            '9 / 14',
+                            '$unlockedCount / $totalCount',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 42,
@@ -274,7 +297,7 @@ class AchievementScreen extends StatelessWidget {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Bạn đã mở khóa 9 thành tựu. Tiếp tục hoàn thành nhiệm vụ để nhận thêm huy hiệu.',
+                            'Bạn đã mở khóa $unlockedCount thành tựu. Tiếp tục hoàn thành nhiệm vụ để nhận thêm huy hiệu.',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -293,7 +316,7 @@ class AchievementScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '64%',
+                               '${(progress * 100).toStringAsFixed(0)}%',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -303,7 +326,7 @@ class AchievementScreen extends StatelessWidget {
                           ),
                           SizedBox(height: 8),
                           LinearProgressIndicator(
-                            value: 0.64,
+                            value: progress,
                             minHeight: 11,
                             backgroundColor: Colors.white38,
                             color: Colors.white,
@@ -314,11 +337,11 @@ class AchievementScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        statCard(icon: '🏆', value: '9', label: 'Unlocked'),
-                        const SizedBox(width: 12),
-                        statCard(icon: '🔒', value: '5', label: 'Locked'),
-                        const SizedBox(width: 12),
-                        statCard(icon: '⭐', value: '320', label: 'Bonus EXP'),
+                        statCard(icon: '🏆', value: '$unlockedCount', label: 'Unlocked'),
+const SizedBox(width: 12),
+statCard(icon: '🔒', value: '$lockedCount', label: 'Locked'),
+const SizedBox(width: 12),
+statCard(icon: '⭐', value: '${unlockedCount * 50}', label: 'Bonus EXP'),
                       ],
                     ),
                     const SizedBox(height: 18),
@@ -387,51 +410,32 @@ class AchievementScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    achievementCard(
-                      icon: '🥇',
-                      title: 'First Task',
-                      description:
-                          'Hoàn thành nhiệm vụ đầu tiên trong Life RPG.',
-                      status: 'DONE',
-                      reward: '+50 EXP',
-                      progress: 1,
-                      unlocked: true,
-                      featured: true,
-                    ),
-                    achievementCard(
-                      icon: '📚',
-                      title: 'Study Hero',
-                      description: 'Hoàn thành 10 nhiệm vụ học tập.',
-                      status: '8/10',
-                      reward: '+100 EXP',
-                      progress: 0.8,
-                    ),
-                    achievementCard(
-                      icon: '🧹',
-                      title: 'Clean Master',
-                      description: 'Hoàn thành 5 nhiệm vụ dọn dẹp.',
-                      status: 'DONE',
-                      reward: '+80 EXP',
-                      progress: 1,
-                      unlocked: true,
-                    ),
-                    achievementCard(
-                      icon: '🔥',
-                      title: '7-Day Streak',
-                      description:
-                          'Hoàn thành nhiệm vụ trong 7 ngày liên tiếp.',
-                      status: '4/7',
-                      reward: '+120 EXP',
-                      progress: 0.57,
-                    ),
-                    achievementCard(
-                      icon: '💎',
-                      title: 'Legend Badge',
-                      description: 'Đạt Level 10 để mở khóa huy hiệu đặc biệt.',
-                      status: 'LV 5/10',
-                      reward: '+300 EXP',
-                      progress: 0.5,
-                    ),
+                    if (achievements.isEmpty)
+  const Text(
+    'Chưa có achievement',
+    style: TextStyle(
+      color: Color(0xff8b7c99),
+    ),
+  )
+else
+  Column(
+    children: achievements.map((achievement) {
+      final unlocked = achievement.unlocked;
+
+      return achievementCard(
+        icon: unlocked ? '🏆' : '🔒',
+        title: achievement.title,
+        description: achievement.description,
+        status: unlocked
+            ? 'DONE'
+            : 'LV ${achievement.requiredLevel}',
+        reward: '+50 EXP',
+        progress: unlocked ? 1 : 0,
+        unlocked: unlocked,
+        featured: unlocked,
+      );
+    }).toList(),
+  ),
                   ],
                 ),
               ),

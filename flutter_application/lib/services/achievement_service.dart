@@ -111,4 +111,21 @@ Future<List<AchievementModel>> getAchievementsForChild(
     );
   }).toList();
 }
+Stream<List<AchievementModel>> getAchievementsStreamForChild(
+  String childId,
+) {
+  return _firestore
+      .collection('users')
+      .doc(childId)
+      .collection('achievements')
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      return AchievementModel.fromMap(
+        doc.id,
+        doc.data(),
+      );
+    }).toList();
+  });
+}
 }
