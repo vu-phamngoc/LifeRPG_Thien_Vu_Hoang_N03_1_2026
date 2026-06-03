@@ -76,11 +76,44 @@ class TaskService {
 }
 
   Future<void> approveTask(String taskId) async {
-    await _firestore.collection('tasks').doc(taskId).update({
+  final taskRef = _firestore.collection('tasks').doc(taskId);
+  final taskDoc = await taskRef.get();
+
+  if (!taskDoc.exists) {
+    throw Exception('Không tìm thấy task');
+  }
+
+  final taskData = taskDoc.data()!;
+
+  final childId = taskData['childId'];
+  final expReward = taskData['expReward'] ?? 0;
+  final rewardAmount = taskData['rewardAmount'] ?? 0;
+
+  if (childId == null || childId.toString().isEmpty) {
+    throw Exception('Task chưa có childId');
+  }
+
+  await _firestore.runTransaction((transaction) async {
+    transaction.update(taskRef, {
       'status': 'approved',
       'verifiedAt': FieldValue.serverTimestamp(),
     });
-  }
+
+    final childRef = _firestore.collection('children').doc(childId);
+    final userRef = _firestore.collection('users').doc(childId);
+
+    transaction.set(childRef, {
+      'exp': FieldValue.increment(expReward),
+      'coins': FieldValue.increment(rewardAmount),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    transaction.set(userRef, {
+      'coins': FieldValue.increment(rewardAmount),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  });
+}
 
   Future<void> rejectTask(String taskId) async {
     await _firestore.collection('tasks').doc(taskId).update({

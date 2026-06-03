@@ -305,6 +305,14 @@ class ChildRewardScreen extends StatelessWidget {
     final rewards = rewardProvider.rewards;
     final history = rewardProvider.history;
 
+    if (rewards.isEmpty) {
+  Future.microtask(() {
+    if (context.mounted) {
+      context.read<RewardProvider>().initRewards();
+    }
+  });
+}
+
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(

@@ -15,6 +15,27 @@ class RewardModel {
     required this.redeemed,
   });
 
+  factory RewardModel.fromMap(String id, Map<String, dynamic> map) {
+    return RewardModel(
+      id: id,
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      price: map['price'] ?? 0,
+      icon: map['icon'] ?? '🎁',
+      redeemed: map['redeemed'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'description': description,
+      'price': price,
+      'icon': icon,
+      'redeemed': redeemed,
+    };
+  }
+
   RewardModel copyWith({
     String? id,
     String? title,
