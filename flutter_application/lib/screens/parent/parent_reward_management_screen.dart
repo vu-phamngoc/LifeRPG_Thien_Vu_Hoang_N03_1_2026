@@ -3,14 +3,16 @@ import 'package:provider/provider.dart';
 
 import '../../models/reward_model.dart';
 import '../../providers/reward_provider.dart';
+import '../../providers/family_provider.dart';
 
 class ParentRewardManagementScreen extends StatelessWidget {
   const ParentRewardManagementScreen({super.key});
 
   Future<void> showRewardDialog(
-    BuildContext context, {
-    RewardModel? reward,
-  }) async {
+  BuildContext context, {
+  required String childId,
+  RewardModel? reward,
+}) async {
     final titleController = TextEditingController(text: reward?.title ?? '');
     final descriptionController =
         TextEditingController(text: reward?.description ?? '');
@@ -65,14 +67,16 @@ class ParentRewardManagementScreen extends StatelessWidget {
                 final provider = context.read<RewardProvider>();
 
                 if (reward == null) {
-                  await provider.createReward(
+                 await provider.createRewardForChild(
+  childId: childId,
                     title: title,
                     description: description,
                     price: price,
                     icon: icon.isEmpty ? '🎁' : icon,
                   );
                 } else {
-                  await provider.updateReward(
+                  await provider.updateRewardForChild(
+  childId: childId,
                     rewardId: reward.id,
                     title: title,
                     description: description,
@@ -144,7 +148,11 @@ class ParentRewardManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget rewardCard(BuildContext context, RewardModel reward) {
+  Widget rewardCard(
+  BuildContext context,
+  RewardModel reward,
+  String childId,
+) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -248,12 +256,19 @@ class ParentRewardManagementScreen extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () => showRewardDialog(context, reward: reward),
+            onPressed: () => showRewardDialog(
+  context,
+  childId: childId,
+  reward: reward,
+),
             icon: const Icon(Icons.edit, color: Color(0xff7048ff)),
           ),
           IconButton(
             onPressed: () {
-              context.read<RewardProvider>().deleteReward(reward.id);
+              context.read<RewardProvider>().deleteRewardForChild(
+  childId: childId,
+  rewardId: reward.id,
+);
             },
             icon: const Icon(Icons.delete, color: Color(0xffd94343)),
           ),
@@ -267,13 +282,27 @@ class ParentRewardManagementScreen extends StatelessWidget {
     final rewardProvider = context.watch<RewardProvider>();
     final rewards = rewardProvider.rewards;
 
-    if (rewards.isEmpty) {
-      Future.microtask(() {
-        if (context.mounted) {
-          context.read<RewardProvider>().initRewards();
-        }
-      });
+    final familyProvider = context.watch<FamilyProvider>();
+
+if (familyProvider.children.isEmpty) {
+  Future.microtask(() {
+    familyProvider.listenToLinkedChildren();
+  });
+}
+
+final selectedChildId = familyProvider.children.isNotEmpty
+    ? familyProvider.children.first['uid']
+    : null;
+
+    if (selectedChildId != null) {
+  Future.microtask(() {
+    if (context.mounted) {
+      context
+          .read<RewardProvider>()
+          .listenRewardsForChild(selectedChildId);
     }
+  });
+}
 
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
@@ -306,7 +335,15 @@ class ParentRewardManagementScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  _topButton('➕', () => showRewardDialog(context)),
+                  _topButton(
+  '➕',
+  selectedChildId == null
+      ? () {}
+      : () => showRewardDialog(
+            context,
+            childId: selectedChildId,
+          ),
+),
                 ],
               ),
               const SizedBox(height: 22),
@@ -357,7 +394,12 @@ class ParentRewardManagementScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
                     FilledButton(
-                      onPressed: () => showRewardDialog(context),
+                      onPressed: selectedChildId == null
+    ? null
+    : () => showRewardDialog(
+          context,
+          childId: selectedChildId,
+        ),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xffff8a00),
@@ -421,7 +463,11 @@ class ParentRewardManagementScreen extends StatelessWidget {
               else
                 Column(
                   children: rewards.map((reward) {
-                    return rewardCard(context, reward);
+                    return rewardCard(
+  context,
+  reward,
+  selectedChildId!,
+);
                   }).toList(),
                 ),
             ],

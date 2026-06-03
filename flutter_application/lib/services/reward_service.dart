@@ -24,6 +24,15 @@ class RewardService {
         .collection('rewards');
   }
 
+  CollectionReference<Map<String, dynamic>> rewardsRefForChild(
+  String childId,
+) {
+  return _firestore
+      .collection('users')
+      .doc(childId)
+      .collection('rewards');
+}
+
   Stream<List<RewardModel>> getRewardsStream() {
     return _rewardsRef.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -156,5 +165,56 @@ Future<void> updateReward({
 
 Future<void> deleteReward(String rewardId) async {
   await _rewardsRef.doc(rewardId).delete();
+}
+Future<void> createRewardForChild({
+  required String childId,
+  required String title,
+  required String description,
+  required int price,
+  required String icon,
+}) async {
+  await rewardsRefForChild(childId).add({
+    'title': title,
+    'description': description,
+    'price': price,
+    'icon': icon,
+    'redeemed': false,
+    'createdAt': FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
+
+Future<void> updateRewardForChild({
+  required String childId,
+  required String rewardId,
+  required String title,
+  required String description,
+  required int price,
+  required String icon,
+}) async {
+  await rewardsRefForChild(childId)
+      .doc(rewardId)
+      .set({
+    'title': title,
+    'description': description,
+    'price': price,
+    'icon': icon,
+    'redeemed': false,
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+}
+
+Future<void> deleteRewardForChild({
+  required String childId,
+  required String rewardId,
+}) async {
+  await rewardsRefForChild(childId).doc(rewardId).delete();
+}
+Stream<List<RewardModel>> getRewardsStreamForChild(String childId) {
+  return rewardsRefForChild(childId).snapshots().map((snapshot) {
+    return snapshot.docs.map((doc) {
+      return RewardModel.fromMap(doc.id, doc.data());
+    }).toList();
+  });
 }
 }

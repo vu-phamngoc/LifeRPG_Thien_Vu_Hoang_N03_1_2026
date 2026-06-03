@@ -20,9 +20,7 @@ class RewardProvider extends ChangeNotifier {
 
   List<RewardModel> get history => List.unmodifiable(_history.reversed);
 
-  int get redeemedCount {
-    return _history.length;
-  }
+  int get redeemedCount => _history.length;
 
   bool canRedeem(int price) {
     return coins >= price;
@@ -37,12 +35,23 @@ class RewardProvider extends ChangeNotifier {
       _rewards = rewards;
       notifyListeners();
     });
+
     _coinsSubscription?.cancel();
 
-_coinsSubscription = _rewardService.getCoinsStream().listen((value) {
-  coins = value;
-  notifyListeners();
-});
+    _coinsSubscription = _rewardService.getCoinsStream().listen((value) {
+      coins = value;
+      notifyListeners();
+    });
+  }
+
+  void listenRewardsForChild(String childId) {
+    _rewardSubscription?.cancel();
+
+    _rewardSubscription =
+        _rewardService.getRewardsStreamForChild(childId).listen((rewards) {
+      _rewards = rewards;
+      notifyListeners();
+    });
   }
 
   void setCoins(int value) {
@@ -71,43 +80,87 @@ _coinsSubscription = _rewardService.getCoinsStream().listen((value) {
   }
 
   Future<void> createReward({
-  required String title,
-  required String description,
-  required int price,
-  required String icon,
-}) async {
-  await _rewardService.createReward(
-    title: title,
-    description: description,
-    price: price,
-    icon: icon,
-  );
-}
+    required String title,
+    required String description,
+    required int price,
+    required String icon,
+  }) async {
+    await _rewardService.createReward(
+      title: title,
+      description: description,
+      price: price,
+      icon: icon,
+    );
+  }
 
-Future<void> updateReward({
-  required String rewardId,
-  required String title,
-  required String description,
-  required int price,
-  required String icon,
-}) async {
-  await _rewardService.updateReward(
-    rewardId: rewardId,
-    title: title,
-    description: description,
-    price: price,
-    icon: icon,
-  );
-}
+  Future<void> updateReward({
+    required String rewardId,
+    required String title,
+    required String description,
+    required int price,
+    required String icon,
+  }) async {
+    await _rewardService.updateReward(
+      rewardId: rewardId,
+      title: title,
+      description: description,
+      price: price,
+      icon: icon,
+    );
+  }
 
-Future<void> deleteReward(String rewardId) async {
-  await _rewardService.deleteReward(rewardId);
-}
+  Future<void> deleteReward(String rewardId) async {
+    await _rewardService.deleteReward(rewardId);
+  }
+
+  Future<void> createRewardForChild({
+    required String childId,
+    required String title,
+    required String description,
+    required int price,
+    required String icon,
+  }) async {
+    await _rewardService.createRewardForChild(
+      childId: childId,
+      title: title,
+      description: description,
+      price: price,
+      icon: icon,
+    );
+  }
+
+  Future<void> updateRewardForChild({
+    required String childId,
+    required String rewardId,
+    required String title,
+    required String description,
+    required int price,
+    required String icon,
+  }) async {
+    await _rewardService.updateRewardForChild(
+      childId: childId,
+      rewardId: rewardId,
+      title: title,
+      description: description,
+      price: price,
+      icon: icon,
+    );
+  }
+
+  Future<void> deleteRewardForChild({
+    required String childId,
+    required String rewardId,
+  }) async {
+    await _rewardService.deleteRewardForChild(
+      childId: childId,
+      rewardId: rewardId,
+    );
+  }
 
   @override
   void dispose() {
     _rewardSubscription?.cancel();
-_coinsSubscription?.cancel();
+    _coinsSubscription?.cancel();
     super.dispose();
   }
 }
