@@ -58,4 +58,32 @@ class NotificationService {
       debugPrint('FCM foreground message: $title - $body');
     });
   }
+  Future<void> createNotificationRequest({
+  required String receiverId,
+  required String title,
+  required String body,
+  required String type,
+  String? taskId,
+}) async {
+  final receiverDoc =
+      await _firestore.collection('users').doc(receiverId).get();
+
+  final receiverToken = receiverDoc.data()?['fcmToken'];
+
+  if (receiverToken == null || receiverToken.toString().isEmpty) {
+    debugPrint('❌ Receiver has no FCM token');
+    return;
+  }
+
+  await _firestore.collection('notificationRequests').add({
+    'receiverId': receiverId,
+    'receiverToken': receiverToken,
+    'title': title,
+    'body': body,
+    'type': type,
+    'taskId': taskId,
+    'status': 'pending',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+}
 }
