@@ -70,6 +70,40 @@ _coinsSubscription = _rewardService.getCoinsStream().listen((value) {
     notifyListeners();
   }
 
+  Future<void> createReward({
+  required String title,
+  required String description,
+  required int price,
+  required String icon,
+}) async {
+  await _rewardService.createReward(
+    title: title,
+    description: description,
+    price: price,
+    icon: icon,
+  );
+}
+
+Future<void> updateReward({
+  required String rewardId,
+  required String title,
+  required String description,
+  required int price,
+  required String icon,
+}) async {
+  await _rewardService.updateReward(
+    rewardId: rewardId,
+    title: title,
+    description: description,
+    price: price,
+    icon: icon,
+  );
+}
+
+Future<void> deleteReward(String rewardId) async {
+  await _rewardService.deleteReward(rewardId);
+}
+
   @override
   void dispose() {
     _rewardSubscription?.cancel();

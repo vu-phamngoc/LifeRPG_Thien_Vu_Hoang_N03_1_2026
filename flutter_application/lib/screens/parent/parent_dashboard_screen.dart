@@ -11,6 +11,7 @@ import '../shared/activity_log_screen.dart';
 
 import 'create_task_screen.dart';
 import 'verify_task_screen.dart';
+import 'parent_reward_management_screen.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
@@ -199,6 +200,21 @@ class ParentDashboardScreen extends StatelessWidget {
                 title: 'Xác nhận nhiệm vụ',
               ),
             ),
+            GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const ParentRewardManagementScreen(),
+      ),
+    );
+  },
+  child: buildMenuButton(
+    icon: Icons.card_giftcard,
+    title: 'Quản lý phần thưởng',
+  ),
+),
 
             GestureDetector(
               onTap: () {

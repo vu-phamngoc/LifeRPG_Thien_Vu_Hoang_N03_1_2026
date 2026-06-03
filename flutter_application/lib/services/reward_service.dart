@@ -121,4 +121,40 @@ class RewardService {
     return data['coins'] ?? 0;
   });
 }
+Future<void> createReward({
+  required String title,
+  required String description,
+  required int price,
+  required String icon,
+}) async {
+  await _rewardsRef.add({
+    'title': title,
+    'description': description,
+    'price': price,
+    'icon': icon,
+    'redeemed': false,
+    'createdAt': FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
+
+Future<void> updateReward({
+  required String rewardId,
+  required String title,
+  required String description,
+  required int price,
+  required String icon,
+}) async {
+  await _rewardsRef.doc(rewardId).update({
+    'title': title,
+    'description': description,
+    'price': price,
+    'icon': icon,
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
+
+Future<void> deleteReward(String rewardId) async {
+  await _rewardsRef.doc(rewardId).delete();
+}
 }
