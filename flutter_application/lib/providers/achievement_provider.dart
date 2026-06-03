@@ -1,48 +1,58 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/achievement_model.dart';
+import '../services/achievement_service.dart';
 
 class AchievementProvider extends ChangeNotifier {
-  final List<AchievementModel> _achievements = [
-    const AchievementModel(
-      title: 'Beginner',
-      description: 'Đạt level 2',
-      requiredLevel: 2,
-      unlocked: false,
-    ),
+  final AchievementService _achievementService = AchievementService();
 
-    const AchievementModel(
-      title: 'Task Master',
-      description: 'Đạt level 3',
-      requiredLevel: 3,
-      unlocked: false,
-    ),
+  StreamSubscription<List<AchievementModel>>? _achievementSubscription;
 
-    const AchievementModel(
-      title: 'RPG Hero',
-      description: 'Đạt level 5',
-      requiredLevel: 5,
-      unlocked: false,
-    ),
-  ];
+  List<AchievementModel> _achievements = [];
 
   List<AchievementModel> get achievements => _achievements;
 
-  List<String> checkAchievements(int level) {
-    List<String> unlockedAchievements = [];
+  Future<void> initAchievements() async {
+    await _achievementService.seedDefaultAchievementsIfNeeded();
 
-    for (int i = 0; i < _achievements.length; i++) {
-      final achievement = _achievements[i];
+    _achievementSubscription?.cancel();
 
-      if (level >= achievement.requiredLevel && achievement.unlocked == false) {
-        _achievements[i] = achievement.copyWith(unlocked: true);
+    _achievementSubscription =
+        _achievementService.getAchievementsStream().listen((achievements) {
+      _achievements = achievements;
+      notifyListeners();
+    });
+  }
 
-        unlockedAchievements.add(achievement.title);
-      }
+  Future<List<String>> checkAchievements({
+  required String childId,
+  required int level,
+}) async {
+  final List<String> unlockedAchievements = [];
+
+  final achievements =
+      await _achievementService.getAchievementsForChild(childId);
+
+  for (final achievement in achievements) {
+    if (level >= achievement.requiredLevel &&
+        achievement.unlocked == false) {
+      await _achievementService.unlockAchievementForChild(
+        childId: childId,
+        achievementId: achievement.id,
+      );
+
+      unlockedAchievements.add(achievement.title);
     }
+  }
 
-    notifyListeners();
+  return unlockedAchievements;
+}
 
-    return unlockedAchievements;
+  @override
+  void dispose() {
+    _achievementSubscription?.cancel();
+    super.dispose();
   }
 }

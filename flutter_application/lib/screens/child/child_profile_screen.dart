@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/task_provider.dart';
-import '../../providers/child_provider.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../shared/settings_screen.dart';
@@ -283,9 +282,16 @@ class ChildProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final taskProvider = context.watch<TaskProvider>();
-    final childProvider = context.watch<ChildProvider>();
     final rewardProvider = context.watch<RewardProvider>();
     final achievementProvider = context.watch<AchievementProvider>();
+
+    if (achievementProvider.achievements.isEmpty) {
+  Future.microtask(() {
+    if (context.mounted) {
+      context.read<AchievementProvider>().initAchievements();
+    }
+  });
+}
 
     final unlockedAchievements = achievementProvider.achievements
         .where((achievement) => achievement.unlocked)
@@ -315,6 +321,11 @@ return FutureBuilder<Map<String, dynamic>?>(
 
         final phone =
             user['phone'] ?? '';
+
+        final exp = user['exp'] ?? 0;
+final level = user['level'] ?? 1;
+final maxExp = level * 100;
+final expProgress = maxExp == 0 ? 0.0 : exp / maxExp;
         
         final avatar =
     user['avatar'] as String?;
@@ -400,7 +411,7 @@ return FutureBuilder<Map<String, dynamic>?>(
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        _levelBadge('LV ${childProvider.level}'),
+                        _levelBadge('LV $level'),
                         _levelBadge('🔥 4 Day Streak'),
                       ],
                     ),
@@ -428,7 +439,7 @@ return FutureBuilder<Map<String, dynamic>?>(
                           ),
                         ),
                         Text(
-                          '${(childProvider.expProgress * 100).toStringAsFixed(0)}%',
+                          '${(expProgress * 100).toStringAsFixed(0)}%',
                           style: const TextStyle(
                             color: Color(0xffff8a00),
                             fontWeight: FontWeight.w900,
@@ -440,7 +451,7 @@ return FutureBuilder<Map<String, dynamic>?>(
                     ClipRRect(
                       borderRadius: BorderRadius.circular(999),
                       child: LinearProgressIndicator(
-                        value: childProvider.expProgress.clamp(0, 1),
+                        value: expProgress.clamp(0, 1),
                         minHeight: 12,
                         backgroundColor: const Color(0xfffff0cf),
                         color: const Color(0xffff9f43),
@@ -448,7 +459,7 @@ return FutureBuilder<Map<String, dynamic>?>(
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${childProvider.exp} / ${childProvider.maxExpForCurrentLevel} EXP',
+                      '$exp / $maxExp EXP',
                       style: const TextStyle(
                         color: Color(0xff8b7c99),
                         fontSize: 12,

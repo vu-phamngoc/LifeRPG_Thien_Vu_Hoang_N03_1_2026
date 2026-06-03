@@ -75,43 +75,86 @@ class TaskService {
   }
 }
 
-  Future<void> approveTask(String taskId) async {
+  Future<int> approveTask(String taskId) async {
   final taskRef = _firestore.collection('tasks').doc(taskId);
-  final taskDoc = await taskRef.get();
 
-  if (!taskDoc.exists) {
-    throw Exception('Không tìm thấy task');
-  }
+  return _firestore.runTransaction((transaction) async {
+    final taskDoc = await transaction.get(taskRef);
 
-  final taskData = taskDoc.data()!;
+    if (!taskDoc.exists) {
+      throw Exception('Không tìm thấy task');
+    }
 
-  final childId = taskData['childId'];
-  final expReward = taskData['expReward'] ?? 0;
-  final rewardAmount = taskData['rewardAmount'] ?? 0;
+    final taskData = taskDoc.data()!;
 
-  if (childId == null || childId.toString().isEmpty) {
-    throw Exception('Task chưa có childId');
-  }
+    final childId = taskData['childId'];
+    final int expReward =
+    (taskData['expReward'] ?? 0).toInt();
 
-  await _firestore.runTransaction((transaction) async {
+final int rewardAmount =
+    (taskData['rewardAmount'] ?? 0).toInt();
+
+    if (childId == null || childId.toString().isEmpty) {
+      throw Exception('Task chưa có childId');
+    }
+
+    final childRef =
+        _firestore.collection('children').doc(childId);
+
+    final userRef =
+        _firestore.collection('users').doc(childId);
+
+    final childDoc =
+        await transaction.get(childRef);
+
+    int currentExp = 0;
+    int currentLevel = 1;
+
+    if (childDoc.exists) {
+      final childData = childDoc.data();
+
+      currentExp =
+    (childData?['exp'] ?? 0).toInt();
+
+currentLevel =
+    (childData?['level'] ?? 1).toInt();
+    }
+
+    int newExp = currentExp + expReward;
+    int newLevel = currentLevel;
+
+    while (newExp >= newLevel * 100) {
+      newExp -= newLevel * 100;
+      newLevel++;
+    }
+
     transaction.update(taskRef, {
       'status': 'approved',
       'verifiedAt': FieldValue.serverTimestamp(),
     });
 
-    final childRef = _firestore.collection('children').doc(childId);
-    final userRef = _firestore.collection('users').doc(childId);
+    transaction.set(
+      childRef,
+      {
+        'exp': newExp,
+        'level': newLevel,
+        'coins': FieldValue.increment(rewardAmount),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
 
-    transaction.set(childRef, {
-      'exp': FieldValue.increment(expReward),
-      'coins': FieldValue.increment(rewardAmount),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    transaction.set(userRef, {
-      'coins': FieldValue.increment(rewardAmount),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    transaction.set(
+      userRef,
+      {
+        'exp': newExp,
+        'level': newLevel,
+        'coins': FieldValue.increment(rewardAmount),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    return newLevel; // thêm ở đây
   });
 }
 
@@ -134,4 +177,13 @@ class TaskService {
       'submittedAt': FieldValue.serverTimestamp(),
     });
   }
+  Future<int> getChildLevel(String childId) async {
+  final doc = await _firestore.collection('users').doc(childId).get();
+
+  final data = doc.data();
+
+  if (data == null) return 1;
+
+  return (data['level'] ?? 1).toInt();
+}
 }

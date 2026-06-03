@@ -133,27 +133,35 @@ class VerifyTaskScreen extends StatelessWidget {
   }
 
   Future<void> approveTask(BuildContext context, TaskModel task) async {
-  await TaskService().approveTask(task.id);
+  final childProvider = context.read<ChildProvider>();
+  final rewardProvider = context.read<RewardProvider>();
+  final activityProvider = context.read<ActivityProvider>();
+  final achievementProvider = context.read<AchievementProvider>();
+
+  final updatedLevel = await TaskService().approveTask(task.id);
+  debugPrint('DEBUG APPROVE childId: ${task.childId}');
+debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
 
   if (!context.mounted) return;
 
-  context.read<ChildProvider>().addExp(task.expReward);
-  context.read<ChildProvider>().addReward(task.rewardAmount);
-  context.read<RewardProvider>().addCoins(task.rewardAmount);
+  childProvider.addExp(task.expReward);
+  childProvider.addReward(task.rewardAmount);
+  rewardProvider.addCoins(task.rewardAmount);
 
-  context.read<ActivityProvider>().addActivity(
+  activityProvider.addActivity(
     title: 'Task Approved',
     description: task.title,
   );
 
-  final childProvider = context.read<ChildProvider>();
-
-  final unlockedAchievements = context
-      .read<AchievementProvider>()
-      .checkAchievements(childProvider.level);
+  final unlockedAchievements =
+      await achievementProvider.checkAchievements(
+    childId: task.childId,
+    level: updatedLevel,
+  );
+  debugPrint('DEBUG unlockedAchievements: $unlockedAchievements');
 
   for (final achievement in unlockedAchievements) {
-    context.read<ActivityProvider>().addActivity(
+    activityProvider.addActivity(
       title: 'Achievement Unlocked',
       description: achievement,
     );
