@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/task_model.dart';
+import 'notification_service.dart';
 
 class TaskService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -176,6 +177,22 @@ currentLevel =
       'proofImage': proofImage,
       'submittedAt': FieldValue.serverTimestamp(),
     });
+    final taskDoc = await _firestore.collection('tasks').doc(taskId).get();
+final taskData = taskDoc.data();
+
+if (taskData != null) {
+  final parentId = taskData['parentId'];
+
+  if (parentId != null) {
+    await NotificationService().createNotificationRequest(
+      receiverId: parentId,
+      title: 'Con đã gửi nhiệm vụ',
+      body: 'Một nhiệm vụ mới đang chờ phụ huynh xác nhận.',
+      type: 'task_submitted',
+      taskId: taskId,
+    );
+  }
+}
   }
   Future<int> getChildLevel(String childId) async {
   final doc = await _firestore.collection('users').doc(childId).get();
