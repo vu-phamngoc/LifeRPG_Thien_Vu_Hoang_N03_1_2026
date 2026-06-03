@@ -24,8 +24,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-      allow create: if signedIn() && request.auth.uid == userId;
+  allow read: if isOwner(userId) || isParent();
+  allow create: if signedIn() && request.auth.uid == userId;
+  allow update: if isOwner(userId) || isParent();
 
       match /rewards/{rewardId} {
         allow read, write: if isOwner(userId);
