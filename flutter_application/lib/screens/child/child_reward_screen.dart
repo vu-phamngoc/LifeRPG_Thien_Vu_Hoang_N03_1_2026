@@ -6,8 +6,28 @@ import '../../models/reward_model.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/activity_provider.dart';
 
-class ChildRewardScreen extends StatelessWidget {
+class ChildRewardScreen extends StatefulWidget {
   const ChildRewardScreen({super.key});
+
+  @override
+  State<ChildRewardScreen> createState() => _ChildRewardScreenState();
+}
+
+class _ChildRewardScreenState extends State<ChildRewardScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final childId = FirebaseAuth.instance.currentUser?.uid;
+
+      if (childId == null) return;
+
+      context.read<RewardProvider>().listenRewardsForChild(childId);
+    });
+  }
 
   Widget topButton(String text, VoidCallback onTap) {
     return SizedBox(
@@ -198,16 +218,34 @@ class ChildRewardScreen extends StatelessWidget {
           const SizedBox(width: 10),
           ElevatedButton(
             onPressed: canRedeem
-                ? () {
-                    context.read<RewardProvider>().redeemReward(reward.id);
+                ? () async {
+                    try {
+                      await context.read<RewardProvider>().redeemReward(
+                        reward.id,
+                      );
 
-                    final childId = FirebaseAuth.instance.currentUser!.uid;
+                      final childId = FirebaseAuth.instance.currentUser!.uid;
 
-                    context.read<ActivityProvider>().addActivity(
-                      childId: childId,
-                      title: 'Reward Redeemed',
-                      description: reward.title,
-                    );
+                      if (!context.mounted) return;
+
+                      await context.read<ActivityProvider>().addActivity(
+                        childId: childId,
+                        title: 'Reward Redeemed',
+                        description: reward.title,
+                      );
+
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đổi thưởng thành công')),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Lỗi đổi thưởng: $e')),
+                      );
+                    }
                   }
                 : null,
             style: ElevatedButton.styleFrom(
@@ -309,14 +347,6 @@ class ChildRewardScreen extends StatelessWidget {
     final rewards = rewardProvider.rewards;
     final history = rewardProvider.history;
 
-    if (rewards.isEmpty) {
-      Future.microtask(() {
-        if (context.mounted) {
-          context.read<RewardProvider>().initRewards();
-        }
-      });
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(
@@ -328,29 +358,36 @@ class ChildRewardScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         topButton('←', () => Navigator.pop(context)),
-                        const Column(
-                          children: [
-                            Text(
-                              'Rewards',
-                              style: TextStyle(
-                                fontSize: 22,
-                                color: Color(0xff2d243b),
-                                fontWeight: FontWeight.bold,
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Rewards',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  color: Color(0xff2d243b),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 3),
-                            Text(
-                              'Đổi thưởng & quản lý coin',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xff8b7c99),
+                              SizedBox(height: 3),
+                              Text(
+                                'Đổi thưởng & quản lý coin',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xff8b7c99),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         topButton('🔔', () {}),
                       ],
                     ),

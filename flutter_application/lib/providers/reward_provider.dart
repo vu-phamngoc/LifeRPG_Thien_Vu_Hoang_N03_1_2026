@@ -46,10 +46,19 @@ class RewardProvider extends ChangeNotifier {
 
   void listenRewardsForChild(String childId) {
     _rewardSubscription?.cancel();
+    _coinsSubscription?.cancel();
 
-    _rewardSubscription =
-        _rewardService.getRewardsStreamForChild(childId).listen((rewards) {
-      _rewards = rewards;
+    _rewardSubscription = _rewardService
+        .getRewardsStreamForChild(childId)
+        .listen((rewards) {
+          _rewards = rewards;
+          notifyListeners();
+        });
+
+    _coinsSubscription = _rewardService.getCoinsStreamForChild(childId).listen((
+      value,
+    ) {
+      coins = value;
       notifyListeners();
     });
   }
@@ -65,9 +74,7 @@ class RewardProvider extends ChangeNotifier {
   }
 
   Future<void> redeemReward(String rewardId) async {
-    final reward = _rewards.firstWhere(
-      (reward) => reward.id == rewardId,
-    );
+    final reward = _rewards.firstWhere((reward) => reward.id == rewardId);
 
     if (coins < reward.price) return;
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,19 +7,30 @@ import '../../models/reward_model.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/family_provider.dart';
 
-class ParentRewardManagementScreen extends StatelessWidget {
+class ParentRewardManagementScreen extends StatefulWidget {
   const ParentRewardManagementScreen({super.key});
 
+  @override
+  State<ParentRewardManagementScreen> createState() =>
+      _ParentRewardManagementScreenState();
+}
+
+class _ParentRewardManagementScreenState
+    extends State<ParentRewardManagementScreen> {
+  String? _selectedChildId;
+
   Future<void> showRewardDialog(
-  BuildContext context, {
-  required String childId,
-  RewardModel? reward,
-}) async {
+    BuildContext context, {
+    required String childId,
+    RewardModel? reward,
+  }) async {
     final titleController = TextEditingController(text: reward?.title ?? '');
-    final descriptionController =
-        TextEditingController(text: reward?.description ?? '');
-    final priceController =
-        TextEditingController(text: reward?.price.toString() ?? '');
+    final descriptionController = TextEditingController(
+      text: reward?.description ?? '',
+    );
+    final priceController = TextEditingController(
+      text: reward?.price.toString() ?? '',
+    );
     final iconController = TextEditingController(text: reward?.icon ?? '🎁');
 
     await showDialog(
@@ -61,55 +74,68 @@ class ParentRewardManagementScreen extends StatelessWidget {
                 final price = int.tryParse(priceController.text.trim()) ?? 0;
 
                 if (title.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Vui lòng nhập tên reward'),
-    ),
-  );
-  return;
-}
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập tên reward')),
+                  );
+                  return;
+                }
 
-if (description.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Vui lòng nhập mô tả reward'),
-    ),
-  );
-  return;
-}
+                if (description.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập mô tả reward')),
+                  );
+                  return;
+                }
 
-if (price <= 0) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Giá coin phải lớn hơn 0'),
-    ),
-  );
-  return;
-}
+                if (price <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Giá coin phải lớn hơn 0')),
+                  );
+                  return;
+                }
 
                 final provider = context.read<RewardProvider>();
 
-                if (reward == null) {
-                 await provider.createRewardForChild(
-  childId: childId,
-                    title: title,
-                    description: description,
-                    price: price,
-                    icon: icon.isEmpty ? '🎁' : icon,
+                try {
+                  debugPrint(
+                    'REWARD_SAVE childId=$childId rewardId=${reward?.id} title=$title price=$price',
                   );
-                } else {
-                  await provider.updateRewardForChild(
-  childId: childId,
-                    rewardId: reward.id,
-                    title: title,
-                    description: description,
-                    price: price,
-                    icon: icon.isEmpty ? '🎁' : icon,
-                  );
-                }
 
-                if (context.mounted) {
-                  Navigator.pop(context);
+                  if (reward == null) {
+                    await provider.createRewardForChild(
+                      childId: childId,
+                      title: title,
+                      description: description,
+                      price: price,
+                      icon: icon.isEmpty ? '🎁' : icon,
+                    );
+                  } else {
+                    await provider.updateRewardForChild(
+                      childId: childId,
+                      rewardId: reward.id,
+                      title: title,
+                      description: description,
+                      price: price,
+                      icon: icon.isEmpty ? '🎁' : icon,
+                    );
+                  }
+
+                  debugPrint('REWARD_SAVE_SUCCESS');
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đã lưu reward')),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('REWARD_SAVE_ERROR: $e');
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Lỗi lưu reward: $e')),
+                    );
+                  }
                 }
               },
               child: const Text('Lưu'),
@@ -171,11 +197,7 @@ if (price <= 0) {
     );
   }
 
-  Widget rewardCard(
-  BuildContext context,
-  RewardModel reward,
-  String childId,
-) {
+  Widget rewardCard(BuildContext context, RewardModel reward, String childId) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -279,23 +301,156 @@ if (price <= 0) {
             ),
           ),
           IconButton(
-            onPressed: () => showRewardDialog(
-  context,
-  childId: childId,
-  reward: reward,
-),
+            onPressed: () =>
+                showRewardDialog(context, childId: childId, reward: reward),
             icon: const Icon(Icons.edit, color: Color(0xff7048ff)),
           ),
           IconButton(
-            onPressed: () {
-              context.read<RewardProvider>().deleteRewardForChild(
-  childId: childId,
-  rewardId: reward.id,
-);
+            onPressed: () async {
+              try {
+                debugPrint(
+                  'REWARD_DELETE childId=$childId rewardId=${reward.id}',
+                );
+
+                await context.read<RewardProvider>().deleteRewardForChild(
+                  childId: childId,
+                  rewardId: reward.id,
+                );
+
+                debugPrint('REWARD_DELETE_SUCCESS');
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã xóa reward')),
+                  );
+                }
+              } catch (e) {
+                debugPrint('REWARD_DELETE_ERROR: $e');
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Lỗi xóa reward: $e')));
+                }
+              }
             },
             icon: const Icon(Icons.delete, color: Color(0xffd94343)),
           ),
         ],
+      ),
+    );
+  }
+
+  ImageProvider? _avatarProvider(String? avatar) {
+    if (avatar == null || avatar.trim().isEmpty) return null;
+
+    try {
+      var cleanAvatar = avatar.trim();
+
+      if (cleanAvatar.contains(',')) {
+        cleanAvatar = cleanAvatar.split(',').last;
+      }
+
+      cleanAvatar = cleanAvatar.replaceAll(RegExp(r'\s+'), '');
+
+      return MemoryImage(base64Decode(cleanAvatar));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget childRewardChip({
+    required Map<String, dynamic> child,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final childName = (child['username'] ?? child['email'] ?? 'Child')
+        .toString();
+
+    final avatar =
+        (child['avatar'] ??
+                child['avatarBase64'] ??
+                child['avatarUrl'] ??
+                child['photoUrl'] ??
+                child['image'])
+            ?.toString();
+
+    final avatarProvider = _avatarProvider(avatar);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 104,
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : const Color(0xffffb45c),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: selected ? Colors.white : const Color(0xffffd092),
+            width: selected ? 3 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : [],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipOval(
+              child: Container(
+                width: 54,
+                height: 54,
+                color: Colors.white,
+                child: avatarProvider == null
+                    ? const Center(
+                        child: Text('🧒', style: TextStyle(fontSize: 24)),
+                      )
+                    : Image(
+                        image: avatarProvider,
+                        width: 54,
+                        height: 54,
+                        fit: BoxFit.cover,
+                        gaplessPlayback: true,
+                      ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (selected) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xffff8a00),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: const Text(
+                  'Selected',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 7),
+            ],
+            Text(
+              childName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected ? const Color(0xffff8a00) : Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -307,25 +462,34 @@ if (price <= 0) {
 
     final familyProvider = context.watch<FamilyProvider>();
 
-if (familyProvider.children.isEmpty) {
-  Future.microtask(() {
-    familyProvider.listenToLinkedChildren();
-  });
-}
+    if (familyProvider.children.isEmpty) {
+      Future.microtask(() {
+        familyProvider.listenToLinkedChildren();
+      });
+    }
 
-final selectedChildId = familyProvider.children.isNotEmpty
-    ? familyProvider.children.first['uid']
-    : null;
+    final childIds = familyProvider.children
+        .map((child) => (child['uid'] ?? child['id'])?.toString())
+        .whereType<String>()
+        .toList();
+
+    if (_selectedChildId == null && childIds.isNotEmpty) {
+      _selectedChildId = childIds.first;
+    }
+
+    if (_selectedChildId != null && !childIds.contains(_selectedChildId)) {
+      _selectedChildId = childIds.isNotEmpty ? childIds.first : null;
+    }
+
+    final selectedChildId = _selectedChildId;
 
     if (selectedChildId != null) {
-  Future.microtask(() {
-    if (context.mounted) {
-      context
-          .read<RewardProvider>()
-          .listenRewardsForChild(selectedChildId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+
+        context.read<RewardProvider>().listenRewardsForChild(selectedChildId);
+      });
     }
-  });
-}
 
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
@@ -335,38 +499,45 @@ final selectedChildId = familyProvider.children.isNotEmpty
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _topButton('←', () => Navigator.pop(context)),
-                  const Column(
-                    children: [
-                      Text(
-                        'Manage Rewards',
-                        style: TextStyle(
-                          fontSize: 22,
-                          color: Color(0xff2d243b),
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'Manage Rewards',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 22,
+                            color: Color(0xff2d243b),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Parent Reward System',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xff8b7c99),
+                        SizedBox(height: 3),
+                        Text(
+                          'Parent Reward System',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xff8b7c99),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   _topButton(
-  '➕',
-  selectedChildId == null
-      ? () {}
-      : () => showRewardDialog(
-            context,
-            childId: selectedChildId,
-          ),
-),
+                    '+',
+                    selectedChildId == null
+                        ? () {}
+                        : () => showRewardDialog(
+                            context,
+                            childId: selectedChildId,
+                          ),
+                  ),
                 ],
               ),
               const SizedBox(height: 22),
@@ -389,46 +560,82 @@ final selectedChildId = familyProvider.children.isNotEmpty
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Total Rewards',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${rewards.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 46,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Total Rewards',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${rewards.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 46,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FilledButton(
+                          onPressed: selectedChildId == null
+                              ? null
+                              : () => showRewardDialog(
+                                  context,
+                                  childId: selectedChildId,
+                                ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xffff8a00),
+                          ),
+                          child: const Text('Add Reward'),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Quản lý phần thưởng, tạo reward mới và chỉnh sửa reward cho con.',
+                      'Chọn child, tạo reward mới và chỉnh sửa phần thưởng riêng cho từng child.',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    FilledButton(
-                      onPressed: selectedChildId == null
-    ? null
-    : () => showRewardDialog(
-          context,
-          childId: selectedChildId,
-        ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xffff8a00),
+                    if (familyProvider.children.isNotEmpty) ...[
+                      const SizedBox(height: 18),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: familyProvider.children.map((child) {
+                          final childId = (child['uid'] ?? child['id'])
+                              .toString();
+
+                          return childRewardChip(
+                            child: child,
+                            selected: childId == selectedChildId,
+                            onTap: () {
+                              setState(() {
+                                _selectedChildId = childId;
+                              });
+
+                              context
+                                  .read<RewardProvider>()
+                                  .listenRewardsForChild(childId);
+                            },
+                          );
+                        }).toList(),
                       ),
-                      child: const Text('Add Reward'),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -486,11 +693,7 @@ final selectedChildId = familyProvider.children.isNotEmpty
               else
                 Column(
                   children: rewards.map((reward) {
-                    return rewardCard(
-  context,
-  reward,
-  selectedChildId!,
-);
+                    return rewardCard(context, reward, selectedChildId!);
                   }).toList(),
                 ),
             ],
