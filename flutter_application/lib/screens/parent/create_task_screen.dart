@@ -25,6 +25,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   String? selectedChildId;
   bool isLoading = false;
 
+  DateTime? selectedDeadline;
+
   @override
   void dispose() {
     titleController.dispose();
@@ -35,6 +37,67 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     super.dispose();
   }
 
+  Future<void> pickDeadline() async {
+    final date = await showDatePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2035),
+      initialDate: DateTime.now(),
+    );
+
+    if (date == null) return;
+
+    if (!mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (time == null) return;
+
+    final result = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+
+    setState(() {
+      selectedDeadline = result;
+      deadlineController.text =
+          '${result.day.toString().padLeft(2, '0')}/'
+          '${result.month.toString().padLeft(2, '0')}/'
+          '${result.year} '
+          '${result.hour.toString().padLeft(2, '0')}:'
+          '${result.minute.toString().padLeft(2, '0')}';
+    });
+  }
+
+  DateTime? parseDeadline(String input) {
+    final value = input.trim();
+
+    if (value.isEmpty) {
+      return null;
+    }
+
+    final regex = RegExp(r'^(\d{2})/(\d{2})/(\d{4})\s+(\d{2}):(\d{2})$');
+    final match = regex.firstMatch(value);
+
+    if (match == null) {
+      return null;
+    }
+
+    final day = int.parse(match.group(1)!);
+    final month = int.parse(match.group(2)!);
+    final year = int.parse(match.group(3)!);
+    final hour = int.parse(match.group(4)!);
+    final minute = int.parse(match.group(5)!);
+
+    return DateTime(year, month, day, hour, minute);
+  }
+
   Future<void> createTask() async {
     if (isLoading) return;
 
@@ -42,6 +105,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     final description = descriptionController.text.trim();
     final expReward = int.tryParse(expController.text.trim()) ?? 0;
     final rewardAmount = int.tryParse(rewardController.text.trim()) ?? 0;
+    final deadlineAt = parseDeadline(deadlineController.text);
 
     if (selectedChildId == null || selectedChildId!.isEmpty) {
       _showMessage('Vui lòng chọn Child');
@@ -68,6 +132,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       return;
     }
 
+    if (deadlineController.text.trim().isNotEmpty && deadlineAt == null) {
+      _showMessage('Deadline phải có dạng dd/MM/yyyy HH:mm');
+      return;
+    }
+
     setState(() => isLoading = true);
 
     try {
@@ -78,6 +147,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         expReward: expReward,
         rewardAmount: rewardAmount,
         childId: selectedChildId!,
+        deadlineAt: deadlineAt,
       );
 
       if (!mounted) return;
@@ -159,7 +229,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         : titleController.text.trim();
 
     final previewDeadline = deadlineController.text.trim().isEmpty
-        ? 'Today, 08:00 PM'
+        ? '04/06/2026 20:00'
         : deadlineController.text.trim();
 
     final previewExp = int.tryParse(expController.text.trim()) ?? 50;
@@ -197,7 +267,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     label: 'Deadline',
                     icon: '⏰',
                     controller: deadlineController,
-                    hint: 'Today, 08:00 PM',
+                    readOnly: true,
+                    onTap: pickDeadline,
+                    hint: '04/06/2026 20:00',
                     onChanged: (_) => setState(() {}),
                   ),
                 ],
@@ -391,6 +463,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     TextInputType? keyboardType,
     int maxLines = 1,
     ValueChanged<String>? onChanged,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -429,6 +503,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     enabled: !isLoading,
                     maxLines: maxLines,
                     keyboardType: keyboardType,
+                    readOnly: readOnly,
+                    onTap: onTap,
                     onChanged: onChanged,
                     decoration: InputDecoration(
                       hintText: hint,

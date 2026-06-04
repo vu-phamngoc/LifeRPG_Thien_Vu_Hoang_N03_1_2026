@@ -15,6 +15,7 @@ class TaskService {
     required int expReward,
     required int rewardAmount,
     required String childId,
+    DateTime? deadlineAt,
   }) async {
     final user = _auth.currentUser;
 
@@ -35,131 +36,147 @@ class TaskService {
       'childNote': null,
       'submittedAt': null,
       'verifiedAt': null,
+      'deadlineAt': deadlineAt == null ? null : Timestamp.fromDate(deadlineAt),
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
   Stream<List<TaskModel>> getTasksStream() async* {
-  final user = _auth.currentUser;
+    final user = _auth.currentUser;
 
-  if (user == null) {
-    yield <TaskModel>[];
-    return;
+    if (user == null) {
+      yield <TaskModel>[];
+      return;
+    }
+
+    final userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+    final role = userDoc.data()?['role'];
+
+    Query<Map<String, dynamic>> query;
+
+    if (role == 'parent') {
+      query = _firestore
+          .collection('tasks')
+          .where('parentId', isEqualTo: user.uid);
+    } else if (role == 'child') {
+      query = _firestore
+          .collection('tasks')
+          .where('childId', isEqualTo: user.uid);
+    } else {
+      yield <TaskModel>[];
+      return;
+    }
+
+    await for (final snapshot in query.snapshots()) {
+      final tasks = snapshot.docs.map((doc) {
+        return TaskModel.fromMap(doc.data(), doc.id);
+      }).toList();
+
+      yield tasks;
+    }
   }
-
-  final userDoc =
-      await _firestore.collection('users').doc(user.uid).get();
-
-  final role = userDoc.data()?['role'];
-
-  Query<Map<String, dynamic>> query;
-
-  if (role == 'parent') {
-    query = _firestore
-        .collection('tasks')
-        .where('parentId', isEqualTo: user.uid);
-  } else if (role == 'child') {
-    query = _firestore
-        .collection('tasks')
-        .where('childId', isEqualTo: user.uid);
-  } else {
-    yield <TaskModel>[];
-    return;
-  }
-
-  await for (final snapshot in query.snapshots()) {
-    final tasks = snapshot.docs.map((doc) {
-      return TaskModel.fromMap(doc.data(), doc.id);
-    }).toList();
-
-    yield tasks;
-  }
-}
 
   Future<int> approveTask(String taskId) async {
-  final taskRef = _firestore.collection('tasks').doc(taskId);
+    final taskRef = _firestore.collection('tasks').doc(taskId);
 
-  return _firestore.runTransaction((transaction) async {
-    final taskDoc = await transaction.get(taskRef);
+    return _firestore
+        .runTransaction((transaction) async {
+          final taskDoc = await transaction.get(taskRef);
 
-    if (!taskDoc.exists) {
-      throw Exception('Không tìm thấy task');
-    }
+          if (!taskDoc.exists) {
+            throw Exception('Không tìm thấy task');
+          }
 
-    final taskData = taskDoc.data()!;
+          final taskData = taskDoc.data()!;
 
-    final childId = taskData['childId'];
-    final int expReward =
-    (taskData['expReward'] ?? 0).toInt();
+          final childId = taskData['childId'];
+          final int expReward = (taskData['expReward'] ?? 0).toInt();
 
-final int rewardAmount =
-    (taskData['rewardAmount'] ?? 0).toInt();
+          final int rewardAmount = (taskData['rewardAmount'] ?? 0).toInt();
 
-    if (childId == null || childId.toString().isEmpty) {
-      throw Exception('Task chưa có childId');
-    }
+          if (childId == null || childId.toString().isEmpty) {
+            throw Exception('Task chưa có childId');
+          }
 
-    final childRef =
-        _firestore.collection('children').doc(childId);
+          final childRef = _firestore.collection('children').doc(childId);
 
-    final userRef =
-        _firestore.collection('users').doc(childId);
+          final userRef = _firestore.collection('users').doc(childId);
 
-    final childDoc =
-        await transaction.get(childRef);
+          final childDoc = await transaction.get(childRef);
 
-    int currentExp = 0;
-    int currentLevel = 1;
+          int currentExp = 0;
+          int currentLevel = 1;
 
-    if (childDoc.exists) {
-      final childData = childDoc.data();
+          if (childDoc.exists) {
+            final childData = childDoc.data();
 
-      currentExp =
-    (childData?['exp'] ?? 0).toInt();
+            currentExp = (childData?['exp'] ?? 0).toInt();
 
-currentLevel =
-    (childData?['level'] ?? 1).toInt();
-    }
+            currentLevel = (childData?['level'] ?? 1).toInt();
+          }
 
-    int newExp = currentExp + expReward;
-    int newLevel = currentLevel;
+          int newExp = currentExp + expReward;
+          int newLevel = currentLevel;
 
-    while (newExp >= newLevel * 100) {
-      newExp -= newLevel * 100;
-      newLevel++;
-    }
+          while (newExp >= newLevel * 100) {
+            newExp -= newLevel * 100;
+            newLevel++;
+          }
 
-    transaction.update(taskRef, {
-      'status': 'approved',
+          transaction.update(taskRef, {
+            'status': 'approved',
+            'verifiedAt': FieldValue.serverTimestamp(),
+          });
+
+          transaction.set(childRef, {
+            'exp': newExp,
+            'level': newLevel,
+            'coins': FieldValue.increment(rewardAmount),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+          transaction.set(userRef, {
+            'exp': newExp,
+            'level': newLevel,
+            'coins': FieldValue.increment(rewardAmount),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+          return newLevel;
+        })
+        .then((newLevel) async {
+          final taskDoc = await _firestore
+              .collection('tasks')
+              .doc(taskId)
+              .get();
+
+          final taskData = taskDoc.data();
+
+          if (taskData != null) {
+            final childId = taskData['childId'];
+
+            if (childId != null) {
+              await NotificationService().createNotificationRequest(
+                receiverId: childId,
+                title: 'Nhiệm vụ đã được duyệt',
+                body: 'Phụ huynh đã duyệt nhiệm vụ của bạn.',
+                type: 'task_approved',
+                taskId: taskId,
+              );
+            }
+          }
+
+          return newLevel;
+        });
+  }
+
+  Future<void> rejectTask(String taskId) async {
+    await _firestore.collection('tasks').doc(taskId).update({
+      'status': 'rejected',
       'verifiedAt': FieldValue.serverTimestamp(),
     });
 
-    transaction.set(
-      childRef,
-      {
-        'exp': newExp,
-        'level': newLevel,
-        'coins': FieldValue.increment(rewardAmount),
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-
-    transaction.set(
-      userRef,
-      {
-        'exp': newExp,
-        'level': newLevel,
-        'coins': FieldValue.increment(rewardAmount),
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-        return newLevel;
-  }).then((newLevel) async {
-
-    final taskDoc =
-        await _firestore.collection('tasks').doc(taskId).get();
+    final taskDoc = await _firestore.collection('tasks').doc(taskId).get();
 
     final taskData = taskDoc.data();
 
@@ -169,43 +186,14 @@ currentLevel =
       if (childId != null) {
         await NotificationService().createNotificationRequest(
           receiverId: childId,
-          title: 'Nhiệm vụ đã được duyệt',
-          body: 'Phụ huynh đã duyệt nhiệm vụ của bạn.',
-          type: 'task_approved',
+          title: 'Nhiệm vụ bị từ chối',
+          body: 'Phụ huynh đã từ chối nhiệm vụ.',
+          type: 'task_rejected',
           taskId: taskId,
         );
       }
     }
-
-    return newLevel;
-  });
-}
-
-  Future<void> rejectTask(String taskId) async {
-  await _firestore.collection('tasks').doc(taskId).update({
-    'status': 'rejected',
-    'verifiedAt': FieldValue.serverTimestamp(),
-  });
-
-  final taskDoc =
-      await _firestore.collection('tasks').doc(taskId).get();
-
-  final taskData = taskDoc.data();
-
-  if (taskData != null) {
-    final childId = taskData['childId'];
-
-    if (childId != null) {
-      await NotificationService().createNotificationRequest(
-        receiverId: childId,
-        title: 'Nhiệm vụ bị từ chối',
-        body: 'Phụ huynh đã từ chối nhiệm vụ.',
-        type: 'task_rejected',
-        taskId: taskId,
-      );
-    }
   }
-}
 
   Future<void> submitTask({
     required String taskId,
@@ -219,29 +207,30 @@ currentLevel =
       'submittedAt': FieldValue.serverTimestamp(),
     });
     final taskDoc = await _firestore.collection('tasks').doc(taskId).get();
-final taskData = taskDoc.data();
+    final taskData = taskDoc.data();
 
-if (taskData != null) {
-  final parentId = taskData['parentId'];
+    if (taskData != null) {
+      final parentId = taskData['parentId'];
 
-  if (parentId != null) {
-    await NotificationService().createNotificationRequest(
-      receiverId: parentId,
-      title: 'Con đã gửi nhiệm vụ',
-      body: 'Một nhiệm vụ mới đang chờ phụ huynh xác nhận.',
-      type: 'task_submitted',
-      taskId: taskId,
-    );
+      if (parentId != null) {
+        await NotificationService().createNotificationRequest(
+          receiverId: parentId,
+          title: 'Con đã gửi nhiệm vụ',
+          body: 'Một nhiệm vụ mới đang chờ phụ huynh xác nhận.',
+          type: 'task_submitted',
+          taskId: taskId,
+        );
+      }
+    }
   }
-}
-  }
+
   Future<int> getChildLevel(String childId) async {
-  final doc = await _firestore.collection('users').doc(childId).get();
+    final doc = await _firestore.collection('users').doc(childId).get();
 
-  final data = doc.data();
+    final data = doc.data();
 
-  if (data == null) return 1;
+    if (data == null) return 1;
 
-  return (data['level'] ?? 1).toInt();
-}
+    return (data['level'] ?? 1).toInt();
+  }
 }

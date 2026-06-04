@@ -17,15 +17,12 @@ class ChildTaskScreen extends StatefulWidget {
 class _ChildTaskScreenState extends State<ChildTaskScreen> {
   String selectedFilter = 'All';
 
-    XFile? selectedImage;
+  XFile? selectedImage;
 
   Future<void> pickProofImage(ImageSource source) async {
     final picker = ImagePicker();
 
-    final image = await picker.pickImage(
-      source: source,
-      imageQuality: 70,
-    );
+    final image = await picker.pickImage(source: source, imageQuality: 70);
 
     if (image == null) return;
 
@@ -134,45 +131,49 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
               ),
               const SizedBox(height: 16),
               Container(
-  width: double.infinity,
-  padding: const EdgeInsets.all(14),
-  decoration: BoxDecoration(
-    color: const Color(0xfff3ecff),
-    borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: const Color(0xffd8c8ff), width: 2),
-  ),
-  child: Column(
-    children: [
-      Text(
-        selectedImage == null
-            ? 'Chưa chọn ảnh minh chứng'
-            : 'Đã chọn: ${selectedImage!.name}',
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => pickProofImage(ImageSource.gallery),
-              icon: const Icon(Icons.photo_library),
-              label: const Text('Thư viện'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => pickProofImage(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Camera'),
-            ),
-          ),
-        ],
-      ),
-    ],
-  ),
-),
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xfff3ecff),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xffd8c8ff), width: 2),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      selectedImage == null
+                          ? 'Chưa chọn ảnh minh chứng'
+                          : 'Đã chọn: ${selectedImage!.name}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                pickProofImage(ImageSource.gallery),
+                            icon: const Icon(Icons.photo_library),
+                            label: const Text('Thư viện'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => pickProofImage(ImageSource.camera),
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text('Camera'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           actions: [
@@ -183,38 +184,38 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
               child: const Text('Hủy'),
             ),
             FilledButton(
-  onPressed: () async {
-    if (selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng chọn hoặc chụp ảnh minh chứng.'),
-        ),
-      );
-      return;
-    }
+              onPressed: () async {
+                if (selectedImage == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Vui lòng chọn hoặc chụp ảnh minh chứng.'),
+                    ),
+                  );
+                  return;
+                }
 
-    final imageBytes = await selectedImage!.readAsBytes();
+                final imageBytes = await selectedImage!.readAsBytes();
 
-    final proofImageUrl = base64Encode(imageBytes);
+                final proofImageUrl = base64Encode(imageBytes);
 
-    await TaskService().submitTask(
-      taskId: task.id,
-      childNote: noteController.text.trim().isEmpty
-          ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
-          : noteController.text.trim(),
-      proofImage: proofImageUrl,
-    );
+                await TaskService().submitTask(
+                  taskId: task.id,
+                  childNote: noteController.text.trim().isEmpty
+                      ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
+                      : noteController.text.trim(),
+                  proofImage: proofImageUrl,
+                );
 
-    if (!dialogContext.mounted) return;
+                if (!dialogContext.mounted) return;
 
-    setState(() {
-      selectedImage = null;
-    });
+                setState(() {
+                  selectedImage = null;
+                });
 
-    Navigator.pop(dialogContext);
-  },
-  child: const Text('Gửi'),
-),
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Gửi'),
+            ),
           ],
         );
       },
@@ -222,7 +223,8 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
   }
 
   Widget buildTaskCard(BuildContext context, TaskModel task) {
-    final statusColor = getStatusColor(task.status);
+    final isExpired = task.isExpired;
+    final statusColor = isExpired ? Colors.grey : getStatusColor(task.status);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
@@ -272,7 +274,7 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
                 ),
 
                 child: Text(
-                  getStatusText(task.status),
+                  isExpired ? 'Expired' : getStatusText(task.status),
 
                   style: TextStyle(
                     color: statusColor,
@@ -288,6 +290,16 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
           Text(
             task.description,
             style: TextStyle(color: Colors.grey.shade700, height: 1.5),
+          ),
+
+          const SizedBox(height: 12),
+
+          Text(
+            'Deadline: ${task.deadlineText}',
+            style: TextStyle(
+              color: isExpired ? Colors.red : Colors.grey.shade600,
+              fontWeight: FontWeight.w700,
+            ),
           ),
 
           const SizedBox(height: 18),
@@ -342,16 +354,23 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
 
           const SizedBox(height: 20),
 
-          if (task.status == TaskStatus.pending)
+          if (task.status == TaskStatus.pending && !isExpired)
             SizedBox(
               width: double.infinity,
-
               child: FilledButton(
                 onPressed: () {
                   showSubmitDialog(context, task);
                 },
-
                 child: const Text('Submit Task'),
+              ),
+            ),
+
+          if (task.status == TaskStatus.pending && isExpired)
+            const SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: null,
+                child: Text('Task Locked - Deadline Expired'),
               ),
             ),
 
