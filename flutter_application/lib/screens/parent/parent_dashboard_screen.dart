@@ -1,257 +1,808 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 
-import '../auth/role_select_screen.dart';
-import '../shared/settings_screen.dart';
 import '../shared/activity_log_screen.dart';
+import '../shared/settings_screen.dart';
 
 import 'create_task_screen.dart';
-import 'verify_task_screen.dart';
 import 'parent_reward_management_screen.dart';
+import 'verify_task_screen.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
 
-  Widget buildCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 42, color: color),
+  Stream<QuerySnapshot<Map<String, dynamic>>> _childrenStream() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
-          const SizedBox(height: 12),
+    if (uid == null) {
+      return const Stream.empty();
+    }
 
-          Text(
-            value,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(title),
-        ],
-      ),
-    );
+    return FirebaseFirestore.instance
+        .collection('children')
+        .where('parentId', isEqualTo: uid)
+        .snapshots();
   }
 
-  Widget buildMenuButton({required IconData icon, required String title}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        tileColor: Colors.grey.shade100,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      ),
-    );
+  int _asInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  String _formatMoney(int value) {
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}K';
+    }
+
+    return '$value';
+  }
+
+  void _open(BuildContext context, Widget screen) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
   Widget build(BuildContext context) {
     final taskProvider = context.watch<TaskProvider>();
-    final totalTasks = taskProvider.tasks.length;
-
-    final submittedTasks = taskProvider.submittedTasks.length;
-
-    final firstChildId = taskProvider.tasks.isEmpty
-        ? null
-        : taskProvider.tasks.first.childId;
+    final tasks = taskProvider.tasks;
+    final submittedTasks = taskProvider.submittedTasks;
+    final totalTasks = tasks.length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Parent Dashboard'),
-        centerTitle: true,
+      backgroundColor: const Color(0xfffffaff),
+      body: SafeArea(
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: _childrenStream(),
+          builder: (context, childSnapshot) {
+            final children = childSnapshot.data?.docs ?? [];
 
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
+            final totalCoins = children.fold<int>(
+              0,
+              (total, doc) => total + _asInt(doc.data()['coins']),
+            );
 
-          IconButton(
-            icon: const Icon(Icons.swap_horiz),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-              );
-            },
-          ),
-        ],
-      ),
+            final totalExp = children.fold<int>(
+              0,
+              (total, doc) => total + _asInt(doc.data()['exp']),
+            );
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Xin chào phụ huynh 👋',
-              style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              'Quản lý nhiệm vụ và theo dõi tiến độ của trẻ',
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-            ),
-
-            const SizedBox(height: 32),
-
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-
-              crossAxisCount: 2,
-
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-
-              children: [
-                buildCard(
-                  icon: Icons.task_alt,
-                  title: 'Tổng nhiệm vụ',
-                  value: '$totalTasks',
-                  color: Colors.blue,
-                ),
-
-                buildCard(
-                  icon: Icons.pending_actions,
-                  title: 'Chờ xác nhận',
-                  value: '$submittedTasks',
-                  color: Colors.orange,
-                ),
-
-                StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                  stream: firstChildId == null
-                      ? null
-                      : FirebaseFirestore.instance
-                            .collection('children')
-                            .doc(firstChildId)
-                            .snapshots(),
-                  builder: (context, snapshot) {
-                    final coins = snapshot.data?.data()?['coins'] ?? 0;
-
-                    return buildCard(
-                      icon: Icons.emoji_events,
-                      title: 'Reward',
-                      value: '$coins đ',
-                      color: Colors.green,
-                    );
-                  },
-                ),
-
-                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: firstChildId == null
-                      ? null
-                      : FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(firstChildId)
-                            .collection('achievements')
-                            .where('unlocked', isEqualTo: true)
-                            .snapshots(),
-                  builder: (context, snapshot) {
-                    final unlockedAchievements =
-                        snapshot.data?.docs.length ?? 0;
-
-                    return buildCard(
-                      icon: Icons.star,
-                      title: 'Achievement',
-                      value: '$unlockedAchievements',
-                      color: Colors.purple,
-                    );
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 32),
-
-            const Text(
-              'Quản lý',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 20),
-
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
-                );
-              },
-
-              child: buildMenuButton(
-                icon: Icons.add_task,
-                title: 'Tạo nhiệm vụ',
-              ),
-            ),
-
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const VerifyTaskScreen()),
-                );
-              },
-
-              child: buildMenuButton(
-                icon: Icons.verified,
-                title: 'Xác nhận nhiệm vụ',
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ParentRewardManagementScreen(),
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _topHeader(context),
+                  const SizedBox(height: 18),
+                  _searchBox(),
+                  _hero(
+                    context: context,
+                    submittedTasks: submittedTasks.length,
                   ),
-                );
-              },
-              child: buildMenuButton(
-                icon: Icons.card_giftcard,
-                title: 'Quản lý phần thưởng',
+                  _statsGrid(
+                    totalTasks: totalTasks,
+                    submittedTasks: submittedTasks.length,
+                    totalExp: totalExp,
+                    totalCoins: totalCoins,
+                  ),
+                  _sectionTitle('Quick Access', 'All tools'),
+                  _quickGrid(context),
+                  _sectionTitle('Cần xử lý ngay', 'View all'),
+                  _pendingAlerts(context, submittedTasks),
+                  _sectionTitle('Child Progress', 'Details'),
+                  _childrenProgress(children),
+                  _sectionTitle('Recent Activities', 'Today'),
+                  _recentActivities(tasks),
+                ],
               ),
-            ),
-
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ActivityLogScreen()),
-                );
-              },
-
-              child: buildMenuButton(
-                icon: Icons.history,
-                title: 'Lịch sử hoạt động',
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
+
+  Widget _topHeader(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Xin chào, Parent',
+                style: TextStyle(
+                  color: Color(0xff2d243b),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Quản lý nhiệm vụ của con hôm nay',
+                style: TextStyle(color: Color(0xff8b7c99), fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: () => _open(context, const SettingsScreen()),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xff7048ff), Color(0xffffb347)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xff7048ff).withValues(alpha: 0.25),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.family_restroom,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _searchBox() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xffeee3fb)),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff502d82).withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const TextField(
+        decoration: InputDecoration(
+          icon: Icon(Icons.search, color: Color(0xff7048ff)),
+          hintText: 'Tìm task, con, reward, achievement...',
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _hero({required BuildContext context, required int submittedTasks}) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xff7048ff), Color(0xff9d72ff)],
+        ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff7048ff).withValues(alpha: 0.25),
+            blurRadius: 30,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Family Overview',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$submittedTasks Pending',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 40,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            submittedTasks == 0
+                ? 'Không có nhiệm vụ nào đang chờ xác nhận.'
+                : 'Có $submittedTasks nhiệm vụ đang chờ xác nhận. Hãy duyệt để con nhận EXP và coin.',
+            style: const TextStyle(
+              color: Colors.white,
+              height: 1.5,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _heroButton(
+                  text: 'Create Task',
+                  primary: true,
+                  onTap: () => _open(context, const CreateTaskScreen()),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _heroButton(
+                  text: 'Verify Now',
+                  primary: false,
+                  onTap: () => _open(context, const VerifyTaskScreen()),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroButton({
+    required String text,
+    required bool primary,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      height: 46,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: primary
+              ? Colors.white
+              : Colors.white.withValues(alpha: 0.25),
+          foregroundColor: primary ? const Color(0xff7048ff) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(
+              color: primary
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.45),
+            ),
+          ),
+        ),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w900)),
+      ),
+    );
+  }
+
+  Widget _statsGrid({
+    required int totalTasks,
+    required int submittedTasks,
+    required int totalExp,
+    required int totalCoins,
+  }) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 14,
+      crossAxisSpacing: 14,
+      childAspectRatio: 1.22,
+      children: [
+        _statCard(
+          icon: Icons.assignment_outlined,
+          value: '$totalTasks',
+          label: 'Total Tasks',
+          color: const Color(0xff7048ff),
+        ),
+        _statCard(
+          icon: Icons.verified_outlined,
+          value: '$submittedTasks',
+          label: 'Need Verify',
+          color: const Color(0xffff9f43),
+        ),
+        _statCard(
+          icon: Icons.star_outline,
+          value: '$totalExp',
+          label: 'Total EXP',
+          color: const Color(0xff2b6bd6),
+        ),
+        _statCard(
+          icon: Icons.card_giftcard,
+          value: _formatMoney(totalCoins),
+          label: 'Rewards Given',
+          color: const Color(0xff2ecc71),
+        ),
+      ],
+    );
+  }
+
+  Widget _statCard({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xfff0e7fb)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff502d82).withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 28),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xff2d243b),
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xff8b7c99),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, String actionText) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 22, bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xff2d243b),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            actionText,
+            style: const TextStyle(
+              color: Color(0xff7048ff),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickGrid(BuildContext context) {
+    final items = [
+      _QuickItem(
+        icon: Icons.add_task,
+        title: 'Task',
+        onTap: () => _open(context, const CreateTaskScreen()),
+      ),
+      _QuickItem(
+        icon: Icons.verified,
+        title: 'Verify',
+        onTap: () => _open(context, const VerifyTaskScreen()),
+      ),
+      _QuickItem(
+        icon: Icons.card_giftcard,
+        title: 'Reward',
+        onTap: () => _open(context, const ParentRewardManagementScreen()),
+      ),
+      _QuickItem(
+        icon: Icons.child_care,
+        title: 'Children',
+        onTap: () => _open(context, const ActivityLogScreen()),
+      ),
+      _QuickItem(
+        icon: Icons.leaderboard,
+        title: 'Rank',
+        onTap: () => _open(context, const ActivityLogScreen()),
+      ),
+      _QuickItem(
+        icon: Icons.history,
+        title: 'History',
+        onTap: () => _open(context, const ActivityLogScreen()),
+      ),
+    ];
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.05,
+      children: items.map((item) {
+        return InkWell(
+          onTap: item.onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: const Color(0xfff0e7fb)),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xff502d82).withValues(alpha: 0.08),
+                  blurRadius: 22,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(item.icon, color: const Color(0xff7048ff), size: 28),
+                const SizedBox(height: 8),
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    color: Color(0xff2d243b),
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _pendingAlerts(BuildContext context, List<TaskModel> submittedTasks) {
+    if (submittedTasks.isEmpty) {
+      return _emptyCard('Không có nhiệm vụ cần xác nhận.');
+    }
+
+    final visibleTasks = submittedTasks.take(2).toList();
+
+    return Column(
+      children: visibleTasks.map((task) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xfffff7e8), Colors.white],
+            ),
+            border: Border.all(color: const Color(0xffffe0a9)),
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xff502d82).withValues(alpha: 0.08),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xfffff0cf),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.pending_actions, color: Colors.orange),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xff2d243b),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Con đã gửi bằng chứng, đang chờ xác nhận.',
+                      style: TextStyle(
+                        color: Color(0xff8b7c99),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => _open(context, const VerifyTaskScreen()),
+                child: const Text('Verify'),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _childrenProgress(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> children,
+  ) {
+    if (children.isEmpty) {
+      return _emptyCard('Chưa có child được liên kết.');
+    }
+
+    return Column(
+      children: children.take(2).map((doc) {
+        final data = doc.data();
+        final name = data['username']?.toString().isNotEmpty == true
+            ? data['username'].toString()
+            : data['email']?.toString() ?? 'Child';
+
+        final level = _asInt(data['level']);
+        final exp = _asInt(data['exp']);
+        final coins = _asInt(data['coins']);
+        final maxExp = (level <= 0 ? 1 : level) * 100;
+        final progress = maxExp == 0 ? 0.0 : (exp / maxExp).clamp(0.0, 1.0);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: const Color(0xfff0e7fb)),
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xff502d82).withValues(alpha: 0.08),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xffffb347), Color(0xffff7b54)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.child_care,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            color: Color(0xff2d243b),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$coins coins earned',
+                          style: const TextStyle(
+                            color: Color(0xff8b7c99),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xffefe7ff),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'LV $level',
+                      style: const TextStyle(
+                        color: Color(0xff7048ff),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 10,
+                  backgroundColor: const Color(0xffeee7f7),
+                  color: const Color(0xff7048ff),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(
+                    '$exp / $maxExp EXP',
+                    style: const TextStyle(
+                      color: Color(0xff8b7c99),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${(progress * 100).round()}%',
+                    style: const TextStyle(
+                      color: Color(0xff8b7c99),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _recentActivities(List<TaskModel> tasks) {
+    final recent = tasks.take(3).toList();
+
+    if (recent.isEmpty) {
+      return _emptyCard('Chưa có hoạt động gần đây.');
+    }
+
+    return Column(
+      children: recent.map((task) {
+        final icon = task.status == TaskStatus.submitted
+            ? Icons.upload_file
+            : task.status == TaskStatus.approved
+            ? Icons.check_circle
+            : task.status == TaskStatus.rejected
+            ? Icons.cancel
+            : Icons.assignment;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: const Color(0xfff0e7fb)),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xff502d82).withValues(alpha: 0.07),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xfff1e9ff),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: const Color(0xff7048ff)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xff2d243b),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      task.statusText,
+                      style: const TextStyle(
+                        color: Color(0xff8b7c99),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                task.deadlineText,
+                style: const TextStyle(
+                  color: Color(0xffaaa0b5),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _emptyCard(String message) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xfff0e7fb)),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(message, style: const TextStyle(color: Color(0xff8b7c99))),
+    );
+  }
+}
+
+class _QuickItem {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _QuickItem({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
 }
