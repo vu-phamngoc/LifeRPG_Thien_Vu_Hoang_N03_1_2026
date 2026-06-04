@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/activity_provider.dart';
-import '../../services/task_service.dart';
 import '../../providers/family_provider.dart';
+import '../../services/task_service.dart';
+import 'parent_main_navigation_screen.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({super.key});
@@ -15,10 +16,12 @@ class CreateTaskScreen extends StatefulWidget {
 class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
+  final deadlineController = TextEditingController();
   final expController = TextEditingController();
   final rewardController = TextEditingController();
 
-  String difficulty = 'Dễ';
+  String difficulty = 'Trung bình';
+  String category = 'Study';
   String? selectedChildId;
   bool isLoading = false;
 
@@ -26,6 +29,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
+    deadlineController.dispose();
     expController.dispose();
     rewardController.dispose();
     super.dispose();
@@ -38,51 +42,33 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     final description = descriptionController.text.trim();
     final expReward = int.tryParse(expController.text.trim()) ?? 0;
     final rewardAmount = int.tryParse(rewardController.text.trim()) ?? 0;
-    
+
     if (selectedChildId == null || selectedChildId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn Child')),
-      );
+      _showMessage('Vui lòng chọn Child');
       return;
     }
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập tên nhiệm vụ')),
-      );
+      _showMessage('Vui lòng nhập tên nhiệm vụ');
       return;
     }
 
     if (description.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Vui lòng nhập mô tả nhiệm vụ'),
-    ),
-  );
-  return;
-}
+      _showMessage('Vui lòng nhập mô tả nhiệm vụ');
+      return;
+    }
 
-if (expReward <= 0) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('EXP phải lớn hơn 0'),
-    ),
-  );
-  return;
-}
+    if (expReward <= 0) {
+      _showMessage('EXP phải lớn hơn 0');
+      return;
+    }
 
-if (rewardAmount < 0) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Tiền thưởng không được âm'),
-    ),
-  );
-  return;
-}
+    if (rewardAmount < 0) {
+      _showMessage('Tiền thưởng không được âm');
+      return;
+    }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
       await TaskService().createTask(
@@ -97,179 +83,745 @@ if (rewardAmount < 0) {
       if (!mounted) return;
 
       await context.read<ActivityProvider>().addActivity(
-  childId: selectedChildId!,
-  title: 'Tạo nhiệm vụ',
-  description: 'Parent đã tạo nhiệm vụ: $title',
-);
+        childId: selectedChildId!,
+        title: 'Tạo nhiệm vụ',
+        description: 'Parent đã tạo nhiệm vụ: $title',
+      );
 
-if (!mounted) return;
-
-titleController.clear();
-descriptionController.clear();
-expController.clear();
-rewardController.clear();
-
-ScaffoldMessenger.of(context).showSnackBar(
-  const SnackBar(content: Text('Tạo nhiệm vụ thành công')),
-);
-
-Navigator.pop(context);
-
-    } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi tạo nhiệm vụ: $e')),
+      final messenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
+
+      titleController.clear();
+      descriptionController.clear();
+      deadlineController.clear();
+      expController.clear();
+      rewardController.clear();
+
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Tạo nhiệm vụ thành công')),
       );
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const ParentMainNavigationScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Lỗi tạo nhiệm vụ: $e');
     } finally {
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => isLoading = false);
       }
     }
   }
 
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Map<String, dynamic>? get selectedChild {
+    final children = context.read<FamilyProvider>().children;
+    for (final child in children) {
+      if (child['uid'] == selectedChildId) return child;
+    }
+    return null;
+  }
+
+  String get selectedChildName {
+    final child = selectedChild;
+    if (child == null) return 'Chưa chọn child';
+
+    final username = child['username']?.toString() ?? '';
+    if (username.isNotEmpty) return username;
+
+    final email = child['email']?.toString() ?? '';
+    if (email.isNotEmpty) return email;
+
+    return child['uid']?.toString() ?? 'Child';
+  }
+
   @override
   Widget build(BuildContext context) {
-
     final familyProvider = context.watch<FamilyProvider>();
 
     if (familyProvider.children.isEmpty) {
-      Future.microtask(() {
-        familyProvider.listenToLinkedChildren();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<FamilyProvider>().listenToLinkedChildren();
       });
-    }  
+    }
+
+    final previewTitle = titleController.text.trim().isEmpty
+        ? 'Làm bài tập toán'
+        : titleController.text.trim();
+
+    final previewDeadline = deadlineController.text.trim().isEmpty
+        ? 'Today, 08:00 PM'
+        : deadlineController.text.trim();
+
+    final previewExp = int.tryParse(expController.text.trim()) ?? 50;
+    final previewCoin = int.tryParse(rewardController.text.trim()) ?? 20;
 
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
-      appBar: AppBar(
-        title: const Text('Tạo nhiệm vụ'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            DropdownButtonFormField<String>(
-  initialValue: selectedChildId,
-  items: familyProvider.children.map(
-    (child) {
-      final childId = child['uid'] ?? '';
-      final childName = child['username']?.toString().isNotEmpty == true
-          ? child['username']
-          : child['email'] ?? childId;
-
-      return DropdownMenuItem<String>(
-        value: childId,
-        child: Text(childName),
-      );
-    },
-  ).toList(),
-  onChanged: isLoading
-      ? null
-      : (value) {
-          setState(() {
-            selectedChildId = value;
-          });
-        },
-  decoration: InputDecoration(
-    labelText: 'Chọn Child',
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-  ),
-),
-
-const SizedBox(height: 16),
-            TextField(
-              controller: titleController,
-              enabled: !isLoading,
-              decoration: InputDecoration(
-                labelText: 'Tên nhiệm vụ',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _topBar(),
+              const SizedBox(height: 22),
+              _hero(),
+              _formCard(
+                children: [
+                  _inputField(
+                    label: 'Task Title',
+                    icon: '📋',
+                    controller: titleController,
+                    hint: 'Ví dụ: Làm bài tập toán',
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  _inputField(
+                    label: 'Description',
+                    icon: '📝',
+                    controller: descriptionController,
+                    hint: 'Mô tả chi tiết nhiệm vụ cần hoàn thành...',
+                    maxLines: 4,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  _inputField(
+                    label: 'Deadline',
+                    icon: '⏰',
+                    controller: deadlineController,
+                    hint: 'Today, 08:00 PM',
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              enabled: !isLoading,
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: 'Mô tả',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              _sectionTitle('Assign To', 'Choose child'),
+              _childGrid(familyProvider.children),
+              _sectionTitle('Difficulty', 'Task level'),
+              _difficultyRow(),
+              _sectionTitle('Rewards', 'EXP & Coins'),
+              _formCard(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _inputField(
+                          label: 'EXP Reward',
+                          icon: '⭐',
+                          controller: expController,
+                          hint: '50',
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _inputField(
+                          label: 'Coin Reward',
+                          icon: '🎁',
+                          controller: rewardController,
+                          hint: '20',
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                    ],
+                  ),
+                  _categoryDropdown(),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: difficulty,
-              items: ['Dễ', 'Trung bình', 'Khó']
-                  .map(
-                    (value) => DropdownMenuItem(
-                      value: value,
-                      child: Text(value),
+              _sectionTitle('Task Preview', 'Before create'),
+              _previewCard(
+                title: previewTitle,
+                deadline: previewDeadline,
+                exp: previewExp,
+                coin: previewCoin,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _actionButton(
+                      text: 'Cancel',
+                      isPrimary: false,
+                      onTap: isLoading ? null : () => Navigator.pop(context),
                     ),
-                  )
-                  .toList(),
-              onChanged: isLoading
-                  ? null
-                  : (value) {
-                      if (value == null) return;
-                      setState(() {
-                        difficulty = value;
-                      });
-                    },
-              decoration: InputDecoration(
-                labelText: 'Độ khó',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: _actionButton(
+                      text: isLoading ? 'Creating...' : 'Create Task',
+                      isPrimary: true,
+                      onTap: isLoading ? null : createTask,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _topBar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _topIconButton(Icons.arrow_back, () => Navigator.pop(context)),
+        const Column(
+          children: [
+            Text(
+              'Create Task',
+              style: TextStyle(
+                color: Color(0xff2d243b),
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: expController,
-              enabled: !isLoading,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'EXP thưởng',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: rewardController,
-              enabled: !isLoading,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Tiền thưởng',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: isLoading ? null : createTask,
-                child: isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Tạo nhiệm vụ'),
-              ),
+            SizedBox(height: 3),
+            Text(
+              'Tạo nhiệm vụ mới',
+              style: TextStyle(color: Color(0xff8b7c99), fontSize: 13),
             ),
           ],
         ),
+        _topIconButton(Icons.save, isLoading ? () {} : createTask),
+      ],
+    );
+  }
+
+  Widget _topIconButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xff502d82).withValues(alpha: 0.10),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 22, color: const Color(0xff2d243b)),
+      ),
+    );
+  }
+
+  Widget _hero() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 22),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xff7048ff), Color(0xff9d72ff)],
+        ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff7048ff).withValues(alpha: 0.25),
+            blurRadius: 30,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Assign New Quest',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Tạo nhiệm vụ cho con, đặt EXP, coin thưởng và theo dõi tiến độ hoàn thành.',
+            style: TextStyle(color: Colors.white, height: 1.5, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _formCard({required List<Widget> children}) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: const Color(0xfff0e7fb)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff502d82).withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _inputField({
+    required String label,
+    required String icon,
+    required TextEditingController controller,
+    required String hint,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    ValueChanged<String>? onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xff2d243b),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xfffaf7ff),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xffeee3fb)),
+            ),
+            child: Row(
+              crossAxisAlignment: maxLines > 1
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(top: maxLines > 1 ? 16 : 0),
+                  child: Text(icon, style: const TextStyle(fontSize: 20)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    enabled: !isLoading,
+                    maxLines: maxLines,
+                    keyboardType: keyboardType,
+                    onChanged: onChanged,
+                    decoration: InputDecoration(
+                      hintText: hint,
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, String actionText) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 22, bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xff2d243b),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            actionText,
+            style: const TextStyle(
+              color: Color(0xff7048ff),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _childGrid(List<Map<String, dynamic>> children) {
+    if (children.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xffeee3fb)),
+        ),
+        child: const Text(
+          'Chưa có child được liên kết',
+          style: TextStyle(color: Color(0xff8b7c99)),
+        ),
+      );
+    }
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.15,
+      children: children.map((child) {
+        final childId = child['uid']?.toString() ?? '';
+        final name = child['username']?.toString().isNotEmpty == true
+            ? child['username'].toString()
+            : child['email']?.toString() ?? childId;
+        final level = child['level'] ?? 1;
+        final exp = child['exp'] ?? 0;
+        final active = selectedChildId == childId;
+
+        return GestureDetector(
+          onTap: isLoading
+              ? null
+              : () {
+                  setState(() {
+                    selectedChildId = childId;
+                  });
+                },
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: active ? const Color(0xfff5efff) : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: active
+                    ? const Color(0xff7048ff)
+                    : const Color(0xffeee3fb),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xff502d82).withValues(alpha: 0.06),
+                  blurRadius: 22,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xffffb347), Color(0xffff7b54)],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Text('🧒', style: TextStyle(fontSize: 27)),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xff2d243b),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'LV $level • $exp EXP',
+                  style: const TextStyle(
+                    color: Color(0xff8b7c99),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _difficultyRow() {
+    final items = {'Dễ': 'Easy', 'Trung bình': 'Medium', 'Khó': 'Hard'};
+
+    return Row(
+      children: items.entries.map((entry) {
+        final active = difficulty == entry.key;
+
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        setState(() {
+                          difficulty = entry.key;
+                        });
+                      },
+                style: ElevatedButton.styleFrom(
+                  elevation: active ? 8 : 0,
+                  backgroundColor: active
+                      ? const Color(0xff7048ff)
+                      : Colors.white,
+                  foregroundColor: active
+                      ? Colors.white
+                      : const Color(0xff7d708d),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(
+                      color: active
+                          ? const Color(0xff7048ff)
+                          : const Color(0xffeee3fb),
+                    ),
+                  ),
+                ),
+                child: Text(
+                  entry.value,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _categoryDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Task Category',
+            style: TextStyle(
+              color: Color(0xff2d243b),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xfffaf7ff),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xffeee3fb)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: category,
+                isExpanded: true,
+                items: const [
+                  DropdownMenuItem(value: 'Study', child: Text('📚 Study')),
+                  DropdownMenuItem(
+                    value: 'Housework',
+                    child: Text('🏠 Housework'),
+                  ),
+                  DropdownMenuItem(value: 'Health', child: Text('💪 Health')),
+                  DropdownMenuItem(
+                    value: 'Daily Quest',
+                    child: Text('⚔️ Daily Quest'),
+                  ),
+                ],
+                onChanged: isLoading
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        setState(() {
+                          category = value;
+                        });
+                      },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _previewCard({
+    required String title,
+    required String deadline,
+    required int exp,
+    required int coin,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xfffff7e8), Colors.white],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xffffe0a9)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff502d82).withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xfffff0cf),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  category == 'Study'
+                      ? '📚'
+                      : category == 'Housework'
+                      ? '🏠'
+                      : category == 'Health'
+                      ? '💪'
+                      : '⚔️',
+                  style: const TextStyle(fontSize: 28),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xff2d243b),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Assigned to $selectedChildName • Deadline $deadline',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xff8b7c99),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _tag(
+                '⭐ +$exp EXP',
+                const Color(0xffefe7ff),
+                const Color(0xff7048ff),
+              ),
+              _tag(
+                '🎁 +$coin Coins',
+                const Color(0xfffff3df),
+                const Color(0xffff8a00),
+              ),
+              _tag(
+                difficulty == 'Dễ'
+                    ? 'Easy'
+                    : difficulty == 'Khó'
+                    ? 'Hard'
+                    : 'Medium',
+                const Color(0xffe8f0ff),
+                const Color(0xff2b6bd6),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tag(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w900),
+      ),
+    );
+  }
+
+  Widget _actionButton({
+    required String text,
+    required bool isPrimary,
+    required VoidCallback? onTap,
+  }) {
+    return SizedBox(
+      height: 56,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          elevation: isPrimary ? 10 : 0,
+          backgroundColor: isPrimary
+              ? const Color(0xff7048ff)
+              : const Color(0xfff1edf5),
+          foregroundColor: isPrimary ? Colors.white : const Color(0xff8b7c99),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+        ),
+        child: isLoading && isPrimary
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(text, style: const TextStyle(fontWeight: FontWeight.w900)),
       ),
     );
   }
