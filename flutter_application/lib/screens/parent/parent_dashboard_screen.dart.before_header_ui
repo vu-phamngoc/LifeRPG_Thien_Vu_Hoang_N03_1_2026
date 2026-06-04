@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +8,7 @@ import '../../providers/task_provider.dart';
 
 import '../shared/activity_log_screen.dart';
 import '../shared/leaderboard_screen.dart';
+import '../shared/settings_screen.dart';
 
 import 'create_task_screen.dart';
 import 'parent_reward_management_screen.dart';
@@ -19,24 +17,6 @@ import 'verify_task_screen.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
-
-  Uint8List? _decodeAvatar(dynamic avatar) {
-    if (avatar == null) return null;
-
-    try {
-      var value = avatar.toString();
-
-      if (value.isEmpty) return null;
-
-      if (value.contains(',')) {
-        value = value.split(',').last;
-      }
-
-      return base64Decode(value);
-    } catch (_) {
-      return null;
-    }
-  }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _childrenStream() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -80,206 +60,132 @@ class ParentDashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment.topRight,
-              radius: 1.25,
-              colors: [Color(0xffefe5ff), Color(0xfffffaff), Color(0xffffffff)],
-              stops: [0.0, 0.35, 1.0],
-            ),
-          ),
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _childrenStream(),
-            builder: (context, childSnapshot) {
-              final children = childSnapshot.data?.docs ?? [];
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: _childrenStream(),
+          builder: (context, childSnapshot) {
+            final children = childSnapshot.data?.docs ?? [];
 
-              final totalCoins = children.fold<int>(
-                0,
-                (total, doc) => total + _asInt(doc.data()['coins']),
-              );
+            final totalCoins = children.fold<int>(
+              0,
+              (total, doc) => total + _asInt(doc.data()['coins']),
+            );
 
-              final totalExp = children.fold<int>(
-                0,
-                (total, doc) => total + _asInt(doc.data()['exp']),
-              );
+            final totalExp = children.fold<int>(
+              0,
+              (total, doc) => total + _asInt(doc.data()['exp']),
+            );
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _topHeader(context),
-                    const SizedBox(height: 38),
-                    _hero(
-                      context: context,
-                      submittedTasks: submittedTasks.length,
-                    ),
-                    _statsGrid(
-                      totalTasks: totalTasks,
-                      submittedTasks: submittedTasks.length,
-                      totalExp: totalExp,
-                      totalCoins: totalCoins,
-                    ),
-                    _sectionTitle('Quick Access', 'All tools'),
-                    _quickGrid(context),
-                    _sectionTitle('Cần xử lý ngay', 'View all'),
-                    _pendingAlerts(context, submittedTasks),
-                    _sectionTitle('Child Progress', 'Details'),
-                    _childrenProgress(children),
-                    _sectionTitle('Recent Activities', 'Today'),
-                    _recentActivities(tasks),
-                  ],
-                ),
-              );
-            },
-          ),
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _topHeader(context),
+                  const SizedBox(height: 18),
+                  _searchBox(),
+                  _hero(
+                    context: context,
+                    submittedTasks: submittedTasks.length,
+                  ),
+                  _statsGrid(
+                    totalTasks: totalTasks,
+                    submittedTasks: submittedTasks.length,
+                    totalExp: totalExp,
+                    totalCoins: totalCoins,
+                  ),
+                  _sectionTitle('Quick Access', 'All tools'),
+                  _quickGrid(context),
+                  _sectionTitle('Cần xử lý ngay', 'View all'),
+                  _pendingAlerts(context, submittedTasks),
+                  _sectionTitle('Child Progress', 'Details'),
+                  _childrenProgress(children),
+                  _sectionTitle('Recent Activities', 'Today'),
+                  _recentActivities(tasks),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
   Widget _topHeader(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: uid == null
-          ? null
-          : FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
-      builder: (context, snapshot) {
-        final data = snapshot.data?.data();
-        final username = data?['username']?.toString().isNotEmpty == true
-            ? data!['username'].toString()
-            : 'Parent';
-        final avatarBytes = _decodeAvatar(data?['avatar']);
-
-        return Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xffffb347), Color(0xff9d72ff)],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xff7048ff).withValues(alpha: 0.18),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.star, color: Colors.yellow, size: 34),
+    return Row(
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Xin chào, Parent',
+                style: TextStyle(
+                  color: Color(0xff2d243b),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Life RPG',
-                        style: TextStyle(
-                          color: Color(0xff2d243b),
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Parent & Child Gamification',
-                        style: TextStyle(
-                          color: Color(0xff8b7c99),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Quản lý nhiệm vụ của con hôm nay',
+                style: TextStyle(color: Color(0xff8b7c99), fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: () => _open(context, const SettingsScreen()),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xff7048ff), Color(0xffffb347)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xff7048ff).withValues(alpha: 0.25),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
                 ),
-                const SizedBox(width: 8),
               ],
             ),
-            const SizedBox(height: 44),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(34),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xff7048ff).withValues(alpha: 0.08),
-                    blurRadius: 28,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Welcome back 👋',
-                          style: TextStyle(
-                            color: Color(0xff7048ff),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          'Xin chào,\n$username',
-                          style: const TextStyle(
-                            color: Color(0xff2d243b),
-                            fontSize: 34,
-                            fontWeight: FontWeight.w900,
-                            height: 1.25,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Quản lý nhiệm vụ của con hôm nay',
-                          style: TextStyle(
-                            color: Color(0xff8b7c99),
-                            fontSize: 16,
-                            height: 1.35,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 92,
-                    height: 92,
-                    decoration: BoxDecoration(
-                      gradient: avatarBytes == null
-                          ? const LinearGradient(
-                              colors: [Color(0xff7048ff), Color(0xffffb347)],
-                            )
-                          : null,
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: avatarBytes == null
-                        ? const Icon(
-                            Icons.family_restroom,
-                            color: Colors.white,
-                            size: 46,
-                          )
-                        : Image.memory(avatarBytes, fit: BoxFit.cover),
-                  ),
-                ],
-              ),
+            child: const Icon(
+              Icons.family_restroom,
+              color: Colors.white,
+              size: 30,
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _searchBox() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xffeee3fb)),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff502d82).withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const TextField(
+        decoration: InputDecoration(
+          icon: Icon(Icons.search, color: Color(0xff7048ff)),
+          hintText: 'Tìm task, con, reward, achievement...',
+          border: InputBorder.none,
+        ),
+      ),
     );
   }
 

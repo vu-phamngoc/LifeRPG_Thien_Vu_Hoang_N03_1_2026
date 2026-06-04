@@ -203,11 +203,11 @@ class ChildRewardScreen extends StatelessWidget {
 
                     final childId = FirebaseAuth.instance.currentUser!.uid;
 
-context.read<ActivityProvider>().addActivity(
-  childId: childId,
-  title: 'Reward Redeemed',
-  description: reward.title,
-);
+                    context.read<ActivityProvider>().addActivity(
+                      childId: childId,
+                      title: 'Reward Redeemed',
+                      description: reward.title,
+                    );
                   }
                 : null,
             style: ElevatedButton.styleFrom(
@@ -310,12 +310,12 @@ context.read<ActivityProvider>().addActivity(
     final history = rewardProvider.history;
 
     if (rewards.isEmpty) {
-  Future.microtask(() {
-    if (context.mounted) {
-      context.read<RewardProvider>().initRewards();
+      Future.microtask(() {
+        if (context.mounted) {
+          context.read<RewardProvider>().initRewards();
+        }
+      });
     }
-  });
-}
 
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),

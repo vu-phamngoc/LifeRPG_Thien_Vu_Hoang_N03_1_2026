@@ -286,327 +286,323 @@ class ChildProfileScreen extends StatelessWidget {
     final achievementProvider = context.watch<AchievementProvider>();
 
     if (achievementProvider.achievements.isEmpty) {
-  Future.microtask(() {
-    if (context.mounted) {
-      context.read<AchievementProvider>().initAchievements();
+      Future.microtask(() {
+        if (context.mounted) {
+          context.read<AchievementProvider>().initAchievements();
+        }
+      });
     }
-  });
-}
 
     final unlockedAchievements = achievementProvider.achievements
         .where((achievement) => achievement.unlocked)
         .length;
-    
+
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-return FutureBuilder<Map<String, dynamic>?>(
-  key: ValueKey(currentUid),
-  future: UserService().getCurrentChildProfile(),
+    return FutureBuilder<Map<String, dynamic>?>(
+      key: ValueKey(currentUid),
+      future: UserService().getCurrentChildProfile(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         final user = snapshot.data!;
-        
-        final username =
-            user['username'] ?? 'Hero';
 
-        final email =
-            user['email'] ?? '';
+        final username = user['username'] ?? 'Hero';
 
-        final phone =
-            user['phone'] ?? '';
+        final email = user['email'] ?? '';
+
+        final phone = user['phone'] ?? '';
 
         final exp = user['exp'] ?? 0;
-final level = user['level'] ?? 1;
-final maxExp = level * 100;
-final expProgress = maxExp == 0 ? 0.0 : exp / maxExp;
-        
-        final avatar =
-    user['avatar'] as String?;
+        final level = user['level'] ?? 1;
+        final maxExp = level * 100;
+        final expProgress = maxExp == 0 ? 0.0 : exp / maxExp;
 
-    return Scaffold(
-      backgroundColor: const Color(0xfffffdf8),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        final avatar = user['avatar'] as String?;
+
+        return Scaffold(
+          backgroundColor: const Color(0xfffffdf8),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+              child: Column(
                 children: [
-                  topButton('←', () => Navigator.pop(context)),
-                  const Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Child Profile',
-                        style: TextStyle(
-                          fontSize: 22,
-                          color: Color(0xff2d243b),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      topButton('←', () => Navigator.pop(context)),
+                      const Column(
+                        children: [
+                          Text(
+                            'Child Profile',
+                            style: TextStyle(
+                              fontSize: 22,
+                              color: Color(0xff2d243b),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'Hồ sơ người chơi',
+                            style: TextStyle(
+                              color: Color(0xff8b7c99),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Hồ sơ người chơi',
-                        style: TextStyle(
-                          color: Color(0xff8b7c99),
-                          fontSize: 13,
-                        ),
-                      ),
+                      topButton('⚙️', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        );
+                      }),
                     ],
                   ),
-                  topButton('⚙️', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    );
-                  }),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(26),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xffff9f43), Color(0xffff6b81)],
-                  ),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-  radius: 42,
-  backgroundColor: Colors.white.withValues(alpha: 0.25),
-  backgroundImage: avatar == null || avatar.isEmpty
-      ? null
-      : MemoryImage(base64Decode(avatar)),
-  child: avatar == null || avatar.isEmpty
-      ? const Text('🧒', style: TextStyle(fontSize: 54))
-      : null,
-),
-                    const SizedBox(height: 14),
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(26),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xffff9f43), Color(0xffff6b81)],
                       ),
+                      borderRadius: BorderRadius.circular(32),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Young Hero\nHoàn thành nhiệm vụ để nhận EXP và mở khóa huy hiệu',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, height: 1.5),
-                    ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                    child: Column(
                       children: [
-                        _levelBadge('LV $level'),
-                        _levelBadge('🔥 4 Day Streak'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: const Color(0xfff4e6d2)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'EXP Progress',
-                          style: TextStyle(
-                            color: Color(0xff2d243b),
+                        CircleAvatar(
+                          radius: 42,
+                          backgroundColor: Colors.white.withValues(alpha: 0.25),
+                          backgroundImage: avatar == null || avatar.isEmpty
+                              ? null
+                              : MemoryImage(base64Decode(avatar)),
+                          child: avatar == null || avatar.isEmpty
+                              ? const Text('🧒', style: TextStyle(fontSize: 54))
+                              : null,
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          username,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 25,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Young Hero\nHoàn thành nhiệm vụ để nhận EXP và mở khóa huy hiệu',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white, height: 1.5),
+                        ),
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _levelBadge('LV $level'),
+                            _levelBadge('🔥 4 Day Streak'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: const Color(0xfff4e6d2)),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'EXP Progress',
+                              style: TextStyle(
+                                color: Color(0xff2d243b),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${(expProgress * 100).toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                color: Color(0xffff8a00),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            value: expProgress.clamp(0, 1),
+                            minHeight: 12,
+                            backgroundColor: const Color(0xfffff0cf),
+                            color: const Color(0xffff9f43),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Text(
-                          '${(expProgress * 100).toStringAsFixed(0)}%',
+                          '$exp / $maxExp EXP',
                           style: const TextStyle(
-                            color: Color(0xffff8a00),
-                            fontWeight: FontWeight.w900,
+                            color: Color(0xff8b7c99),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value: expProgress.clamp(0, 1),
-                        minHeight: 12,
-                        backgroundColor: const Color(0xfffff0cf),
-                        color: const Color(0xffff9f43),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$exp / $maxExp EXP',
-                      style: const TextStyle(
-                        color: Color(0xff8b7c99),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 22),
-              Row(
-                children: [
-                  statCard(
-                    icon: '📋',
-                    value: '${taskProvider.tasks.length}',
-                    label: 'Tasks',
                   ),
-                  const SizedBox(width: 12),
-                  statCard(
-                    icon: '🏆',
-                    value: '$unlockedAchievements',
-                    label: 'Badges',
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      statCard(
+                        icon: '📋',
+                        value: '${taskProvider.tasks.length}',
+                        label: 'Tasks',
+                      ),
+                      const SizedBox(width: 12),
+                      statCard(
+                        icon: '🏆',
+                        value: '$unlockedAchievements',
+                        label: 'Badges',
+                      ),
+                      const SizedBox(width: 12),
+                      statCard(
+                        icon: '⭐',
+                        value: '${rewardProvider.coins}',
+                        label: 'Coins',
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  statCard(
-                    icon: '⭐',
-                    value: '${rewardProvider.coins}',
-                    label: 'Coins',
+                  sectionTitle('Featured Achievement', action: 'View all'),
+                  achievementCard(
+                    icon: '📚',
+                    title: 'Study Hero',
+                    subtitle: 'Hoàn thành 10 nhiệm vụ học tập',
+                    status: '8/10',
+                    progress: 0.8,
+                  ),
+                  achievementCard(
+                    icon: '🧹',
+                    title: 'Clean Master',
+                    subtitle: 'Hoàn thành 5 nhiệm vụ dọn dẹp',
+                    status: 'DONE',
+                    progress: 1,
+                  ),
+                  sectionTitle('Profile Information'),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: const Color(0xfff4e6d2)),
+                    ),
+                    child: Column(
+                      children: [
+                        infoRow('Email', email),
+                        infoRow('Phone', phone),
+                        infoRow('Role', 'Child'),
+                        infoRow('Joined', 'May 2026'),
+                      ],
+                    ),
+                  ),
+                  sectionTitle('Settings'),
+                  settingCard(
+                    icon: '🔔',
+                    title: 'Task Reminder',
+                    subtitle: 'Nhắc nhở nhiệm vụ hằng ngày',
+                  ),
+                  settingCard(
+                    icon: '🎨',
+                    title: 'Avatar Style',
+                    subtitle: 'Đổi nhân vật và giao diện',
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      final updated = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditProfileScreen(
+                            username: username,
+                            phone: phone,
+                            role: 'child',
+                            accentColorHex: 'orange',
+                          ),
+                        ),
+                      );
+
+                      if (updated == true && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Cập nhật profile thành công'),
+                          ),
+                        );
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(56),
+                      backgroundColor: const Color(0xffff9f43),
+                    ),
+                    child: const Text('Edit Profile'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () async {
+                      await AuthService().logout();
+
+                      if (!context.mounted) return;
+
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(54),
+                      foregroundColor: const Color(0xffd94343),
+                      backgroundColor: const Color(0xfffff0f0),
+                      side: const BorderSide(color: Color(0xffffd4d4)),
+                    ),
+                    child: const Text('Logout'),
                   ),
                 ],
               ),
-              sectionTitle('Featured Achievement', action: 'View all'),
-              achievementCard(
-                icon: '📚',
-                title: 'Study Hero',
-                subtitle: 'Hoàn thành 10 nhiệm vụ học tập',
-                status: '8/10',
-                progress: 0.8,
-              ),
-              achievementCard(
-                icon: '🧹',
-                title: 'Clean Master',
-                subtitle: 'Hoàn thành 5 nhiệm vụ dọn dẹp',
-                status: 'DONE',
-                progress: 1,
-              ),
-              sectionTitle('Profile Information'),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(color: const Color(0xfff4e6d2)),
-                ),
-                child: Column(
-                  children: [
-                    infoRow('Email', email),
-                    infoRow('Phone', phone),
-                    infoRow('Role', 'Child'),
-                    infoRow('Joined', 'May 2026'),
-                  ],
-                ),
-              ),
-              sectionTitle('Settings'),
-              settingCard(
-                icon: '🔔',
-                title: 'Task Reminder',
-                subtitle: 'Nhắc nhở nhiệm vụ hằng ngày',
-              ),
-              settingCard(
-                icon: '🎨',
-                title: 'Avatar Style',
-                subtitle: 'Đổi nhân vật và giao diện',
-              ),
-              FilledButton(
-                onPressed: () async {
-  final updated = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => EditProfileScreen(
-        username: username,
-        phone: phone,
-        role: 'child',
-        accentColorHex: 'orange',
-      ),
-    ),
-  );
-
-  if (updated == true && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cập nhật profile thành công')),
-    );
-  }
-},
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  backgroundColor: const Color(0xffff9f43),
-                ),
-                child: const Text('Edit Profile'),
-              ),
-              const SizedBox(height: 12),
-             OutlinedButton(
-  onPressed: () async {
-    await AuthService().logout();
-
-    if (!context.mounted) return;
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  },
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(54),
-                  foregroundColor: const Color(0xffd94343),
-                  backgroundColor: const Color(0xfffff0f0),
-                  side: const BorderSide(color: Color(0xffffd4d4)),
-                ),
-                child: const Text('Logout'),
-              ),
-            ],
+            ),
           ),
-          ),
-        ),
-      );
-    },
-  );
-
+        );
+      },
+    );
   }
 
   Widget _levelBadge(String text) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.24),
-      borderRadius: BorderRadius.circular(999),
-    ),
-    child: Text(
-      text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w900,
-        fontSize: 13,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(999),
       ),
-    ),
-  );
-}
-
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
 }
