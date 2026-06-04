@@ -32,6 +32,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   }
 
   Future<void> createTask() async {
+    if (isLoading) return;
+
     final title = titleController.text.trim();
     final description = descriptionController.text.trim();
     final expReward = int.tryParse(expController.text.trim()) ?? 0;
@@ -94,20 +96,25 @@ if (rewardAmount < 0) {
 
       if (!mounted) return;
 
-      context.read<ActivityProvider>().addActivity(
+      await context.read<ActivityProvider>().addActivity(
   childId: selectedChildId!,
-  title: 'Task Created',
-  description: title,
+  title: 'Tạo nhiệm vụ',
+  description: 'Parent đã tạo nhiệm vụ: $title',
 );
 
-      titleController.clear();
-      descriptionController.clear();
-      expController.clear();
-      rewardController.clear();
+if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tạo nhiệm vụ thành công')),
-      );
+titleController.clear();
+descriptionController.clear();
+expController.clear();
+rewardController.clear();
+
+ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(content: Text('Tạo nhiệm vụ thành công')),
+);
+
+Navigator.pop(context);
+
     } catch (e) {
       if (!mounted) return;
 
