@@ -1,33 +1,89 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../providers/activity_provider.dart';
+import '../../models/activity_model.dart';
+import '../../models/task_model.dart';
+import '../../providers/task_provider.dart';
 
 class ActivityLogScreen extends StatelessWidget {
   const ActivityLogScreen({super.key});
 
-  Widget topButton(String text, VoidCallback onTap) {
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          padding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+  Stream<List<ActivityModel>> _activityStream() async* {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      yield <ActivityModel>[];
+      return;
+    }
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final role = userDoc.data()?['role']?.toString().toLowerCase();
+
+    String? activityOwnerId;
+
+    if (role == 'child') {
+      activityOwnerId = user.uid;
+    } else if (role == 'parent') {
+      final childSnapshot = await FirebaseFirestore.instance
+          .collection('children')
+          .where('parentId', isEqualTo: user.uid)
+          .limit(1)
+          .get();
+
+      if (childSnapshot.docs.isNotEmpty) {
+        activityOwnerId = childSnapshot.docs.first.id;
+      }
+    }
+
+    if (activityOwnerId == null) {
+      yield <ActivityModel>[];
+      return;
+    }
+
+    yield* FirebaseFirestore.instance
+        .collection('users')
+        .doc(activityOwnerId)
+        .collection('activities')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+
+            return ActivityModel(
+              title: data['title'] ?? '',
+              description: data['description'] ?? '',
+              createdAt:
+                  (data['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
+            );
+          }).toList();
+        });
+  }
+
+  Widget topButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(text, style: const TextStyle(fontSize: 20)),
+        child: Icon(icon, color: const Color(0xff7048ff)),
       ),
     );
   }
 
   Widget statCard({
-    required String icon,
+    required IconData icon,
     required String value,
     required String label,
   }) {
@@ -48,7 +104,7 @@ class ActivityLogScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
+            Icon(icon, color: const Color(0xff7048ff), size: 27),
             const SizedBox(height: 6),
             Text(
               value,
@@ -93,7 +149,7 @@ class ActivityLogScreen extends StatelessWidget {
   }
 
   Widget activityCard({
-    required String icon,
+    required IconData icon,
     required String title,
     required String description,
     required String tag,
@@ -129,8 +185,7 @@ class ActivityLogScreen extends StatelessWidget {
               color: iconBg,
               borderRadius: BorderRadius.circular(18),
             ),
-            alignment: Alignment.center,
-            child: Text(icon, style: const TextStyle(fontSize: 25)),
+            child: Icon(icon, color: const Color(0xff7048ff)),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -204,219 +259,262 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  @override
-Widget build(BuildContext context) {
-  final user = FirebaseAuth.instance.currentUser;
-
-  if (user != null) {
-    Future.microtask(() {
-      if (context.mounted) {
-        context
-            .read<ActivityProvider>()
-            .listenActivities(user.uid);
-      }
-    });
+  String _timeText(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
-  final activities =
-      context.watch<ActivityProvider>().activities;
+  IconData _activityIcon(String title, String description) {
+    final text = '$title $description'.toLowerCase();
+
+    if (text.contains('reward') || text.contains('thưởng')) {
+      return Icons.card_giftcard;
+    }
+
+    if (text.contains('achievement') || text.contains('huy hiệu')) {
+      return Icons.emoji_events;
+    }
+
+    if (text.contains('từ chối') || text.contains('rejected')) {
+      return Icons.cancel;
+    }
+
+    if (text.contains('xác nhận') || text.contains('duyệt')) {
+      return Icons.check_circle;
+    }
+
+    return Icons.assignment;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tasks = context.watch<TaskProvider>().tasks;
+
+    final approvedTasks = tasks
+        .where((task) => task.status == TaskStatus.approved)
+        .toList();
+
+    final totalExp = approvedTasks.fold<int>(
+      0,
+      (total, task) => total + task.expReward,
+    );
+
+    final totalRewards = approvedTasks.fold<int>(
+      0,
+      (total, task) => total + task.rewardAmount,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        topButton('←', () => Navigator.pop(context)),
-                        const Column(
-                          children: [
-                            Text(
-                              'Activity',
-                              style: TextStyle(
-                                fontSize: 22,
-                                color: Color(0xff2d243b),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 3),
-                            Text(
-                              'Lịch sử hoạt động',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xff8b7c99),
-                              ),
-                            ),
-                          ],
-                        ),
-                        topButton('⚙️', () {}),
-                      ],
-                    ),
-                    const SizedBox(height: 22),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xff7048ff), Color(0xff9d72ff)],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        child: StreamBuilder<List<ActivityModel>>(
+          stream: _activityStream(),
+          builder: (context, snapshot) {
+            final activities = snapshot.data ?? [];
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      topButton(Icons.arrow_back, () => Navigator.pop(context)),
+                      const Column(
                         children: [
-                          const Text(
-                            'Today Summary',
+                          Text(
+                            'Activity',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 19,
+                              fontSize: 22,
+                              color: Color(0xff2d243b),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 3),
                           Text(
-                            '${activities.length}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 42,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            'Hoạt động hôm nay bao gồm task, EXP, reward và achievement.',
+                            'Lịch sử hoạt động',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        statCard(icon: '📋', value: '6', label: 'Tasks'),
-                        const SizedBox(width: 12),
-                        statCard(icon: '⭐', value: '180', label: 'EXP'),
-                        const SizedBox(width: 12),
-                        statCard(icon: '🎁', value: '2', label: 'Rewards'),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: const Color(0xffeee3fb)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Text('🔍', style: TextStyle(fontSize: 20)),
-                          SizedBox(width: 10),
-                          Text(
-                            'Tìm task, reward, achievement...',
-                            style: TextStyle(
+                              fontSize: 13,
                               color: Color(0xff8b7c99),
-                              fontSize: 14,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          chip('All', active: true),
-                          const SizedBox(width: 10),
-                          chip('Task'),
-                          const SizedBox(width: 10),
-                          chip('EXP'),
-                          const SizedBox(width: 10),
-                          chip('Reward'),
-                          const SizedBox(width: 10),
-                          chip('Achievement'),
-                          const SizedBox(width: 10),
-                          chip('Rejected'),
-                        ],
+                      topButton(Icons.settings, () {}),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xff7048ff), Color(0xff9d72ff)],
                       ),
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    const SizedBox(height: 22),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Timeline',
+                        const Text(
+                          'Today Summary',
                           style: TextStyle(
-                            fontSize: 18,
-                            color: Color(0xff2d243b),
+                            color: Colors.white,
+                            fontSize: 19,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 8),
                         Text(
-                          'Export',
+                          '${activities.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 42,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Text(
+                          'Hoạt động hôm nay bao gồm task, EXP, reward và achievement.',
                           style: TextStyle(
-                            color: Color(0xff7048ff),
-                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            fontSize: 14,
+                            height: 1.5,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'TODAY',
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      statCard(
+                        icon: Icons.assignment,
+                        value: '${tasks.length}',
+                        label: 'Tasks',
+                      ),
+                      const SizedBox(width: 12),
+                      statCard(
+                        icon: Icons.star,
+                        value: '$totalExp',
+                        label: 'EXP',
+                      ),
+                      const SizedBox(width: 12),
+                      statCard(
+                        icon: Icons.card_giftcard,
+                        value: '$totalRewards',
+                        label: 'Rewards',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xffeee3fb)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.search, color: Color(0xff7048ff)),
+                        SizedBox(width: 10),
+                        Text(
+                          'Tìm task, reward, achievement...',
+                          style: TextStyle(
+                            color: Color(0xff8b7c99),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        chip('All', active: true),
+                        const SizedBox(width: 10),
+                        chip('Task'),
+                        const SizedBox(width: 10),
+                        chip('EXP'),
+                        const SizedBox(width: 10),
+                        chip('Reward'),
+                        const SizedBox(width: 10),
+                        chip('Achievement'),
+                        const SizedBox(width: 10),
+                        chip('Rejected'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Timeline',
                         style: TextStyle(
-                          color: Color(0xff8b7c99),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: Color(0xff2d243b),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (activities.isEmpty)
-                      activityCard(
-                        icon: '📘',
-                        title: 'Homework Approved',
-                        description: 'Phụ huynh đã xác nhận nhiệm vụ Homework.',
-                        tag: 'APPROVED',
-                        time: '09:30 AM',
-                        amount: '+50 EXP',
-                        iconBg: const Color(0xfff1e9ff),
-                      )
-                    else
-                      Column(
-                        children: activities.map((activity) {
-                          return activityCard(
-                            icon: '📋',
-                            title: activity.title,
-                            description: activity.description,
-                            tag: 'ACTIVITY',
-                            time:
-    '${activity.createdAt.hour}:${activity.createdAt.minute.toString().padLeft(2, '0')}',
-                            amount: '+0 EXP',
-                            iconBg: const Color(0xfff1e9ff),
-                          );
-                        }).toList(),
+                      Text(
+                        'Export',
+                        style: TextStyle(
+                          color: Color(0xff7048ff),
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'TODAY',
+                      style: TextStyle(
+                        color: Color(0xff8b7c99),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (activities.isEmpty)
+                    activityCard(
+                      icon: Icons.info_outline,
+                      title: 'Chưa có hoạt động',
+                      description:
+                          'Khi task được tạo, gửi, duyệt hoặc nhận thưởng, hoạt động sẽ hiển thị tại đây.',
+                      tag: 'EMPTY',
+                      time: '--:--',
+                      amount: '',
+                      iconBg: const Color(0xfff1e9ff),
+                    )
+                  else
+                    Column(
+                      children: activities.map((activity) {
+                        return activityCard(
+                          icon: _activityIcon(
+                            activity.title,
+                            activity.description,
+                          ),
+                          title: activity.title,
+                          description: activity.description,
+                          tag: 'ACTIVITY',
+                          time: _timeText(activity.createdAt),
+                          amount: '',
+                          iconBg: const Color(0xfff1e9ff),
+                        );
+                      }).toList(),
+                    ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
