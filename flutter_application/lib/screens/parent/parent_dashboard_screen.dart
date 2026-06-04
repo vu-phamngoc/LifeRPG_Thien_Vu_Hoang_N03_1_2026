@@ -1,9 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/task_provider.dart';
-import '../../providers/child_provider.dart';
-import '../../providers/achievement_provider.dart';
 
 import '../auth/role_select_screen.dart';
 import '../shared/settings_screen.dart';
@@ -63,18 +62,13 @@ class ParentDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final taskProvider = context.watch<TaskProvider>();
-    final childProvider = context.watch<ChildProvider>();
-    final achievementProvider = context.watch<AchievementProvider>();
-
     final totalTasks = taskProvider.tasks.length;
 
     final submittedTasks = taskProvider.submittedTasks.length;
 
-    final totalReward = childProvider.totalReward;
-
-    final unlockedAchievements = achievementProvider.achievements
-        .where((achievement) => achievement.unlocked)
-        .length;
+    final firstChildId = taskProvider.tasks.isEmpty
+        ? null
+        : taskProvider.tasks.first.childId;
 
     return Scaffold(
       appBar: AppBar(
@@ -148,18 +142,45 @@ class ParentDashboardScreen extends StatelessWidget {
                   color: Colors.orange,
                 ),
 
-                buildCard(
-                  icon: Icons.emoji_events,
-                  title: 'Reward',
-                  value: '$totalReward đ',
-                  color: Colors.green,
+                StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: firstChildId == null
+                      ? null
+                      : FirebaseFirestore.instance
+                            .collection('children')
+                            .doc(firstChildId)
+                            .snapshots(),
+                  builder: (context, snapshot) {
+                    final coins = snapshot.data?.data()?['coins'] ?? 0;
+
+                    return buildCard(
+                      icon: Icons.emoji_events,
+                      title: 'Reward',
+                      value: '$coins đ',
+                      color: Colors.green,
+                    );
+                  },
                 ),
 
-                buildCard(
-                  icon: Icons.star,
-                  title: 'Achievement',
-                  value: '$unlockedAchievements',
-                  color: Colors.purple,
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: firstChildId == null
+                      ? null
+                      : FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(firstChildId)
+                            .collection('achievements')
+                            .where('unlocked', isEqualTo: true)
+                            .snapshots(),
+                  builder: (context, snapshot) {
+                    final unlockedAchievements =
+                        snapshot.data?.docs.length ?? 0;
+
+                    return buildCard(
+                      icon: Icons.star,
+                      title: 'Achievement',
+                      value: '$unlockedAchievements',
+                      color: Colors.purple,
+                    );
+                  },
                 ),
               ],
             ),
@@ -201,20 +222,19 @@ class ParentDashboardScreen extends StatelessWidget {
               ),
             ),
             GestureDetector(
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const ParentRewardManagementScreen(),
-      ),
-    );
-  },
-  child: buildMenuButton(
-    icon: Icons.card_giftcard,
-    title: 'Quản lý phần thưởng',
-  ),
-),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ParentRewardManagementScreen(),
+                  ),
+                );
+              },
+              child: buildMenuButton(
+                icon: Icons.card_giftcard,
+                title: 'Quản lý phần thưởng',
+              ),
+            ),
 
             GestureDetector(
               onTap: () {

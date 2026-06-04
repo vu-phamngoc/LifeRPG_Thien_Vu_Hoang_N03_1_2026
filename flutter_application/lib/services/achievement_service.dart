@@ -18,19 +18,13 @@ class AchievementService {
   }
 
   CollectionReference<Map<String, dynamic>> get _achievementRef {
-    return _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('achievements');
+    return _firestore.collection('users').doc(_uid).collection('achievements');
   }
 
   Stream<List<AchievementModel>> getAchievementsStream() {
     return _achievementRef.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        return AchievementModel.fromMap(
-          doc.id,
-          doc.data(),
-        );
+        return AchievementModel.fromMap(doc.id, doc.data());
       }).toList();
     });
   }
@@ -46,8 +40,8 @@ class AchievementService {
       const AchievementModel(
         id: 'beginner',
         title: 'Beginner',
-        description: 'Đạt level 2',
-        requiredLevel: 2,
+        description: 'Hoàn thành nhiệm vụ đầu tiên',
+        requiredLevel: 1,
         unlocked: false,
       ),
       const AchievementModel(
@@ -67,65 +61,51 @@ class AchievementService {
     ];
 
     for (final achievement in achievements) {
-      await _achievementRef
-          .doc(achievement.id)
-          .set(achievement.toMap());
+      await _achievementRef.doc(achievement.id).set(achievement.toMap());
     }
   }
 
-  Future<void> unlockAchievement(
-    String achievementId,
-  ) async {
+  Future<void> unlockAchievement(String achievementId) async {
     await _achievementRef.doc(achievementId).update({
       'unlocked': true,
       'unlockedAt': FieldValue.serverTimestamp(),
     });
   }
-  Future<void> unlockAchievementForChild({
-  required String childId,
-  required String achievementId,
-}) async {
-  await _firestore
-      .collection('users')
-      .doc(childId)
-      .collection('achievements')
-      .doc(achievementId)
-      .update({
-    'unlocked': true,
-    'unlockedAt': FieldValue.serverTimestamp(),
-  });
-}
-Future<List<AchievementModel>> getAchievementsForChild(
-  String childId,
-) async {
-  final snapshot = await _firestore
-      .collection('users')
-      .doc(childId)
-      .collection('achievements')
-      .get();
 
-  return snapshot.docs.map((doc) {
-    return AchievementModel.fromMap(
-      doc.id,
-      doc.data(),
-    );
-  }).toList();
-}
-Stream<List<AchievementModel>> getAchievementsStreamForChild(
-  String childId,
-) {
-  return _firestore
-      .collection('users')
-      .doc(childId)
-      .collection('achievements')
-      .snapshots()
-      .map((snapshot) {
+  Future<void> unlockAchievementForChild({
+    required String childId,
+    required String achievementId,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(childId)
+        .collection('achievements')
+        .doc(achievementId)
+        .update({'unlocked': true, 'unlockedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<List<AchievementModel>> getAchievementsForChild(String childId) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(childId)
+        .collection('achievements')
+        .get();
+
     return snapshot.docs.map((doc) {
-      return AchievementModel.fromMap(
-        doc.id,
-        doc.data(),
-      );
+      return AchievementModel.fromMap(doc.id, doc.data());
     }).toList();
-  });
-}
+  }
+
+  Stream<List<AchievementModel>> getAchievementsStreamForChild(String childId) {
+    return _firestore
+        .collection('users')
+        .doc(childId)
+        .collection('achievements')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return AchievementModel.fromMap(doc.id, doc.data());
+          }).toList();
+        });
+  }
 }

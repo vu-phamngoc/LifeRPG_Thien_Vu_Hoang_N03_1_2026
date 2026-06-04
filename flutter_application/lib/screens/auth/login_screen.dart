@@ -53,26 +53,22 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (role == 'parent') {
-  context.read<TaskProvider>().listenToTasks();
+        context.read<TaskProvider>().listenToTasks();
 
-  Navigator.pushReplacement(
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ParentMainNavigationScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const ParentMainNavigationScreen()),
         );
       } else if (role == 'child') {
-  await _userService.ensureChildDocumentExists();
+        await _userService.ensureChildDocumentExists();
 
-  if (!mounted) return;
+        if (!mounted) return;
 
-  context.read<TaskProvider>().listenToTasks();
+        context.read<TaskProvider>().listenToTasks();
 
-  Navigator.pushReplacement(
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ChildMainNavigationScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const ChildMainNavigationScreen()),
         );
       } else {
         Navigator.pushReplacement(
@@ -111,74 +107,82 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showMessage(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Đăng nhập'), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Life RPG',
-              style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight:
+                  MediaQuery.of(context).size.height - kToolbarHeight - 48,
             ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Life RPG',
+                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Mật khẩu',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Mật khẩu',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isLoading ? null : _login,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Đăng nhập'),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
+                          );
+                        },
+                  child: const Text('Chưa có tài khoản? Đăng ký'),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _isLoading ? null : _login,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Đăng nhập'),
-              ),
-            ),
-            TextButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
-                        ),
-                      );
-                    },
-              child: const Text('Chưa có tài khoản? Đăng ký'),
-            ),
-          ],
+          ),
         ),
       ),
     );
