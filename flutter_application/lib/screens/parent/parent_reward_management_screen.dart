@@ -18,6 +18,7 @@ class ParentRewardManagementScreen extends StatefulWidget {
 class _ParentRewardManagementScreenState
     extends State<ParentRewardManagementScreen> {
   String? _selectedChildId;
+  bool _startedFamilyListen = false;
 
   Future<void> showRewardDialog(
     BuildContext context, {
@@ -462,9 +463,13 @@ class _ParentRewardManagementScreenState
 
     final familyProvider = context.watch<FamilyProvider>();
 
-    if (familyProvider.children.isEmpty) {
+    if (!_startedFamilyListen) {
+      _startedFamilyListen = true;
+      final familyReader = context.read<FamilyProvider>();
+
       Future.microtask(() {
-        familyProvider.listenToLinkedChildren();
+        if (!mounted) return;
+        familyReader.listenToLinkedChildren();
       });
     }
 
@@ -484,10 +489,11 @@ class _ParentRewardManagementScreenState
     final selectedChildId = _selectedChildId;
 
     if (selectedChildId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+      final rewardReader = context.read<RewardProvider>();
 
-        context.read<RewardProvider>().listenRewardsForChild(selectedChildId);
+      Future.microtask(() {
+        if (!mounted) return;
+        rewardReader.listenRewardsForChild(selectedChildId);
       });
     }
 
