@@ -1,14 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../models/activity_model.dart';
-import '../../models/task_model.dart';
-import '../../providers/task_provider.dart';
+import '../../services/activity_service.dart';
 
 class ActivityLogScreen extends StatelessWidget {
   const ActivityLogScreen({super.key});
+
+  DateTime _dateFromDynamic(dynamic value) {
+    if (value == null) return DateTime.now();
+
+    try {
+      return value.toDate();
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
 
   Stream<List<ActivityModel>> _activityStream() async* {
     final user = FirebaseAuth.instance.currentUser;
@@ -38,6 +46,17 @@ class ActivityLogScreen extends StatelessWidget {
 
       if (childSnapshot.docs.isNotEmpty) {
         activityOwnerId = childSnapshot.docs.first.id;
+      } else {
+        final userChildSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('parentId', isEqualTo: user.uid)
+            .where('role', isEqualTo: 'child')
+            .limit(1)
+            .get();
+
+        if (userChildSnapshot.docs.isNotEmpty) {
+          activityOwnerId = userChildSnapshot.docs.first.id;
+        }
       }
     }
 
@@ -46,24 +65,83 @@ class ActivityLogScreen extends StatelessWidget {
       return;
     }
 
-    yield* FirebaseFirestore.instance
+    final userRef = FirebaseFirestore.instance
         .collection('users')
-        .doc(activityOwnerId)
+        .doc(activityOwnerId);
+
+    final activitiesSnapshot = await userRef
         .collection('activities')
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final data = doc.data();
+        .get();
 
-            return ActivityModel(
-              title: data['title'] ?? '',
-              description: data['description'] ?? '',
-              createdAt:
-                  (data['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
-            );
-          }).toList();
-        });
+    final rewardHistorySnapshot = await userRef
+        .collection('rewardHistory')
+        .orderBy('redeemedAt', descending: true)
+        .get();
+
+    final achievementsSnapshot = await userRef.collection('achievements').get();
+
+    final rewardsSnapshot = await userRef.collection('rewards').get();
+
+    debugPrint(
+      'ACTIVITY_DEBUG counts activities=${activitiesSnapshot.docs.length} rewardHistory=${rewardHistorySnapshot.docs.length} achievements=${achievementsSnapshot.docs.length} rewards=${rewardHistorySnapshot.docs.length}',
+    );
+
+    final items = <ActivityModel>[];
+
+    for (final doc in activitiesSnapshot.docs) {
+      final data = doc.data();
+
+      items.add(
+        ActivityModel(
+          title: data['title'] ?? '',
+          description: data['description'] ?? '',
+          createdAt: _dateFromDynamic(data['createdAt']),
+        ),
+      );
+    }
+
+    for (final doc in rewardHistorySnapshot.docs) {
+      final data = doc.data();
+
+      items.add(
+        ActivityModel(
+          title: 'Reward Redeemed',
+          description: data['title'] ?? data['description'] ?? 'Reward',
+          createdAt: _dateFromDynamic(data['redeemedAt']),
+        ),
+      );
+    }
+
+    for (final doc in achievementsSnapshot.docs) {
+      final data = doc.data();
+      items.add(
+        ActivityModel(
+          title: 'Achievement',
+          description: data['title'] ?? data['description'] ?? 'Achievement',
+          createdAt: _dateFromDynamic(
+            data['unlockedAt'] ?? data['createdAt'] ?? data['updatedAt'],
+          ),
+        ),
+      );
+    }
+
+    for (final doc in rewardsSnapshot.docs) {
+      final data = doc.data();
+      items.add(
+        ActivityModel(
+          title: 'Reward',
+          description: data['title'] ?? data['description'] ?? 'Reward',
+          createdAt: _dateFromDynamic(data['updatedAt'] ?? data['createdAt']),
+        ),
+      );
+    }
+
+    items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    debugPrint('ACTIVITY_DEBUG totalItems=${items.length}');
+
+    yield items;
   }
 
   Widget topButton(IconData icon, VoidCallback onTap) {
@@ -260,7 +338,24 @@ class ActivityLogScreen extends StatelessWidget {
   }
 
   String _timeText(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+
+    return '$hour:$minute';
+  }
+
+  String _dateText(DateTime time) {
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+
+    return '${days[time.weekday - 1]} - ${time.day}/${time.month}/${time.year}';
   }
 
   IconData _activityIcon(String title, String description) {
@@ -287,22 +382,6 @@ class ActivityLogScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = context.watch<TaskProvider>().tasks;
-
-    final approvedTasks = tasks
-        .where((task) => task.status == TaskStatus.approved)
-        .toList();
-
-    final totalExp = approvedTasks.fold<int>(
-      0,
-      (total, task) => total + task.expReward,
-    );
-
-    final totalRewards = approvedTasks.fold<int>(
-      0,
-      (total, task) => total + task.rewardAmount,
-    );
-
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(
@@ -310,6 +389,49 @@ class ActivityLogScreen extends StatelessWidget {
           stream: _activityStream(),
           builder: (context, snapshot) {
             final activities = snapshot.data ?? [];
+
+            final now = DateTime.now();
+
+            final todayActivities = activities.where((activity) {
+              return activity.createdAt.year == now.year &&
+                  activity.createdAt.month == now.month &&
+                  activity.createdAt.day == now.day;
+            }).toList();
+
+            final taskActivityCount = todayActivities.where((activity) {
+              final text = '${activity.title} ${activity.description}'
+                  .toLowerCase();
+
+              return text.contains('task') ||
+                  text.contains('nhiệm vụ') ||
+                  text.contains('submitted') ||
+                  text.contains('approved') ||
+                  text.contains('rejected');
+            }).length;
+
+            final achievementActivityCount = todayActivities.where((activity) {
+              final text = '${activity.title} ${activity.description}'
+                  .toLowerCase();
+
+              return text.contains('achievement') || text.contains('huy hiệu');
+            }).length;
+
+            final previousActivities = activities.where((activity) {
+              final d = activity.createdAt;
+
+              return !(d.year == now.year &&
+                  d.month == now.month &&
+                  d.day == now.day);
+            }).toList();
+
+            final rewardActivityCount = todayActivities.where((activity) {
+              final text = '${activity.title} ${activity.description}'
+                  .toLowerCase();
+
+              return text.contains('reward') ||
+                  text.contains('thưởng') ||
+                  text.contains('coin');
+            }).length;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
@@ -339,7 +461,15 @@ class ActivityLogScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      topButton(Icons.settings, () {}),
+                      topButton(Icons.settings, () async {
+                        await ActivityService().syncOldTasksToActivity();
+
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Đã đồng bộ task cũ')),
+                        );
+                      }),
                     ],
                   ),
                   const SizedBox(height: 22),
@@ -355,8 +485,8 @@ class ActivityLogScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Today Summary',
+                        Text(
+                          _dateText(DateTime.now()),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 19,
@@ -365,7 +495,7 @@ class ActivityLogScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${activities.length}',
+                          '${todayActivities.length}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 42,
@@ -384,26 +514,38 @@ class ActivityLogScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      statCard(
-                        icon: Icons.assignment,
-                        value: '${tasks.length}',
-                        label: 'Tasks',
-                      ),
-                      const SizedBox(width: 12),
-                      statCard(
-                        icon: Icons.star,
-                        value: '$totalExp',
-                        label: 'EXP',
-                      ),
-                      const SizedBox(width: 12),
-                      statCard(
-                        icon: Icons.card_giftcard,
-                        value: '$totalRewards',
-                        label: 'Rewards',
-                      ),
-                    ],
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 180,
+                          child: statCard(
+                            icon: Icons.assignment,
+                            value: '$taskActivityCount',
+                            label: 'Tasks',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 180,
+                          child: statCard(
+                            icon: Icons.star,
+                            value: '$achievementActivityCount',
+                            label: 'Achievements',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 180,
+                          child: statCard(
+                            icon: Icons.card_giftcard,
+                            value: '$rewardActivityCount',
+                            label: 'Rewards',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 18),
                   Container(
@@ -483,7 +625,7 @@ class ActivityLogScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (activities.isEmpty)
+                  if (todayActivities.isEmpty)
                     activityCard(
                       icon: Icons.info_outline,
                       title: 'Chưa có hoạt động',
@@ -496,7 +638,7 @@ class ActivityLogScreen extends StatelessWidget {
                     )
                   else
                     Column(
-                      children: activities.map((activity) {
+                      children: todayActivities.map((activity) {
                         return activityCard(
                           icon: _activityIcon(
                             activity.title,
@@ -511,6 +653,41 @@ class ActivityLogScreen extends StatelessWidget {
                         );
                       }).toList(),
                     ),
+
+                  const SizedBox(height: 24),
+
+                  if (previousActivities.isNotEmpty) ...[
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'PREVIOUS DAYS',
+                        style: TextStyle(
+                          color: Color(0xff8b7c99),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Column(
+                      children: previousActivities.map((activity) {
+                        return activityCard(
+                          icon: _activityIcon(
+                            activity.title,
+                            activity.description,
+                          ),
+                          title: activity.title,
+                          description: activity.description,
+                          tag:
+                              '${activity.createdAt.day}/${activity.createdAt.month}',
+                          time: _timeText(activity.createdAt),
+                          amount: '',
+                          iconBg: const Color(0xfff1e9ff),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ],
               ),
             );

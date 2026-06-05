@@ -199,27 +199,28 @@ class AchievementScreen extends StatelessWidget {
   }
 
   @override
-Widget build(BuildContext context) {
-  final user = FirebaseAuth.instance.currentUser;
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
 
-  if (user != null) {
-    Future.microtask(() {
-      if (context.mounted) {
-        context
-            .read<AchievementProvider>()
-            .listenAchievementsForChild(user.uid);
-      }
-    });
-  }
+    if (user != null) {
+      Future.microtask(() {
+        if (context.mounted) {
+          context.read<AchievementProvider>().listenAchievementsForChild(
+            user.uid,
+          );
+        }
+      });
+    }
 
-  final achievements = context.watch<AchievementProvider>().achievements;
-  final unlockedCount =
-      achievements.where((achievement) => achievement.unlocked).length;
-  final totalCount = achievements.length;
-  final lockedCount = totalCount - unlockedCount;
-  final progress = totalCount == 0 ? 0.0 : unlockedCount / totalCount;
+    final achievements = context.watch<AchievementProvider>().achievements;
+    final unlockedCount = achievements
+        .where((achievement) => achievement.unlocked)
+        .length;
+    final totalCount = achievements.length;
+    final lockedCount = totalCount - unlockedCount;
+    final progress = totalCount == 0 ? 0.0 : unlockedCount / totalCount;
 
-  return Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xfffffaff),
       body: SafeArea(
         child: Column(
@@ -316,7 +317,7 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                               Text(
-                               '${(progress * 100).toStringAsFixed(0)}%',
+                                '${(progress * 100).toStringAsFixed(0)}%',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -337,11 +338,23 @@ Widget build(BuildContext context) {
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        statCard(icon: '🏆', value: '$unlockedCount', label: 'Unlocked'),
-const SizedBox(width: 12),
-statCard(icon: '🔒', value: '$lockedCount', label: 'Locked'),
-const SizedBox(width: 12),
-statCard(icon: '⭐', value: '${unlockedCount * 50}', label: 'Bonus EXP'),
+                        statCard(
+                          icon: '🏆',
+                          value: '$unlockedCount',
+                          label: 'Unlocked',
+                        ),
+                        const SizedBox(width: 12),
+                        statCard(
+                          icon: '🔒',
+                          value: '$lockedCount',
+                          label: 'Locked',
+                        ),
+                        const SizedBox(width: 12),
+                        statCard(
+                          icon: '⭐',
+                          value: '${unlockedCount * 50}',
+                          label: 'Bonus EXP',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 18),
@@ -411,31 +424,29 @@ statCard(icon: '⭐', value: '${unlockedCount * 50}', label: 'Bonus EXP'),
                     ),
                     const SizedBox(height: 12),
                     if (achievements.isEmpty)
-  const Text(
-    'Chưa có achievement',
-    style: TextStyle(
-      color: Color(0xff8b7c99),
-    ),
-  )
-else
-  Column(
-    children: achievements.map((achievement) {
-      final unlocked = achievement.unlocked;
+                      const Text(
+                        'Chưa có achievement',
+                        style: TextStyle(color: Color(0xff8b7c99)),
+                      )
+                    else
+                      Column(
+                        children: achievements.map((achievement) {
+                          final unlocked = achievement.unlocked;
 
-      return achievementCard(
-        icon: unlocked ? '🏆' : '🔒',
-        title: achievement.title,
-        description: achievement.description,
-        status: unlocked
-            ? 'DONE'
-            : 'LV ${achievement.requiredLevel}',
-        reward: '+50 EXP',
-        progress: unlocked ? 1 : 0,
-        unlocked: unlocked,
-        featured: unlocked,
-      );
-    }).toList(),
-  ),
+                          return achievementCard(
+                            icon: unlocked ? '🏆' : '🔒',
+                            title: achievement.title,
+                            description: achievement.description,
+                            status: unlocked
+                                ? 'DONE'
+                                : 'LV ${achievement.requiredLevel}',
+                            reward: '+50 EXP',
+                            progress: unlocked ? 1 : 0,
+                            unlocked: unlocked,
+                            featured: unlocked,
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),

@@ -7,6 +7,7 @@ import '../../providers/child_provider.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../../providers/reward_provider.dart';
+import '../../providers/family_provider.dart';
 import '../../services/task_service.dart';
 
 import 'dart:convert';
@@ -16,16 +17,16 @@ class VerifyTaskScreen extends StatelessWidget {
   const VerifyTaskScreen({super.key});
 
   Uint8List? decodeProofImage(String? image) {
-  if (image == null || image.isEmpty) {
-    return null;
-  }
+    if (image == null || image.isEmpty) {
+      return null;
+    }
 
-  try {
-    return base64Decode(image);
-  } catch (_) {
-    return null;
+    try {
+      return base64Decode(image);
+    } catch (_) {
+      return null;
+    }
   }
-}
 
   Widget topButton(String text, VoidCallback onTap) {
     return SizedBox(
@@ -133,54 +134,53 @@ class VerifyTaskScreen extends StatelessWidget {
   }
 
   Future<void> approveTask(BuildContext context, TaskModel task) async {
-  final childProvider = context.read<ChildProvider>();
-  final rewardProvider = context.read<RewardProvider>();
-  final activityProvider = context.read<ActivityProvider>();
-  final achievementProvider = context.read<AchievementProvider>();
+    final childProvider = context.read<ChildProvider>();
+    final rewardProvider = context.read<RewardProvider>();
+    final activityProvider = context.read<ActivityProvider>();
+    final achievementProvider = context.read<AchievementProvider>();
 
-  final updatedLevel = await TaskService().approveTask(task.id);
-  debugPrint('DEBUG APPROVE childId: ${task.childId}');
-debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
+    final updatedLevel = await TaskService().approveTask(task.id);
+    debugPrint('DEBUG APPROVE childId: ${task.childId}');
+    debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
 
-  if (!context.mounted) return;
+    if (!context.mounted) return;
 
-  childProvider.addExp(task.expReward);
-  childProvider.addReward(task.rewardAmount);
-  rewardProvider.addCoins(task.rewardAmount);
+    childProvider.addExp(task.expReward);
+    childProvider.addReward(task.rewardAmount);
+    rewardProvider.addCoins(task.rewardAmount);
 
-  activityProvider.addActivity(
-  childId: task.childId,
-  title: 'Task Approved',
-  description: task.title,
-);
-
-  final unlockedAchievements =
-      await achievementProvider.checkAchievements(
-    childId: task.childId,
-    level: updatedLevel,
-  );
-  debugPrint('DEBUG unlockedAchievements: $unlockedAchievements');
-
-  for (final achievement in unlockedAchievements) {
     activityProvider.addActivity(
-  childId: task.childId,
-  title: 'Achievement Unlocked',
-  description: achievement,
-);
+      childId: task.childId,
+      title: 'Task Approved',
+      description: task.title,
+    );
+
+    final unlockedAchievements = await achievementProvider.checkAchievements(
+      childId: task.childId,
+      level: updatedLevel,
+    );
+    debugPrint('DEBUG unlockedAchievements: $unlockedAchievements');
+
+    for (final achievement in unlockedAchievements) {
+      activityProvider.addActivity(
+        childId: task.childId,
+        title: 'Achievement Unlocked',
+        description: achievement,
+      );
+    }
   }
-}
 
   Future<void> rejectTask(BuildContext context, TaskModel task) async {
-  await TaskService().rejectTask(task.id);
+    await TaskService().rejectTask(task.id);
 
-  if (!context.mounted) return;
+    if (!context.mounted) return;
 
-  context.read<ActivityProvider>().addActivity(
-  childId: task.childId,
-  title: 'Task Rejected',
-  description: task.title,
-);
-}
+    context.read<ActivityProvider>().addActivity(
+      childId: task.childId,
+      title: 'Task Rejected',
+      description: task.title,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,9 +188,15 @@ debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
       return task.status == TaskStatus.submitted;
     }).toList();
 
-    final childProvider = context.watch<ChildProvider>();
+    final familyProvider = context.watch<FamilyProvider>();
 
-    final task = tasks.isNotEmpty ? tasks.first : null;
+    if (familyProvider.children.isEmpty) {
+      Future.microtask(() {
+        if (context.mounted) {
+          context.read<FamilyProvider>().listenToLinkedChildren();
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
@@ -227,7 +233,7 @@ debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
                 ],
               ),
               const SizedBox(height: 24),
-              if (task == null)
+              if (tasks.isEmpty)
                 const Padding(
                   padding: EdgeInsets.only(top: 160),
                   child: Center(
@@ -237,259 +243,292 @@ debugPrint('DEBUG APPROVE updatedLevel: $updatedLevel');
                     ),
                   ),
                 )
-              else ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xff7048ff), Color(0xff9d72ff)],
-                    ),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '📝 ${task.title}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: const Text(
-                              'SUBMITTED',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        task.description,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          height: 1.6,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          _badge('⭐ +${task.expReward} EXP'),
-                          _badge('🎁 +${task.rewardAmount} Coins'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                sectionTitle('Child Information', 'LV ${childProvider.level}'),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(26),
-                    border: Border.all(color: const Color(0xfff0e7fb)),
-                  ),
-                  child: Row(
+              else
+                ...tasks.map((task) {
+                  final child = familyProvider.children.firstWhere(
+                    (child) =>
+                        (child['uid'] ?? child['id']).toString() ==
+                        task.childId,
+                    orElse: () => <String, dynamic>{},
+                  );
+
+                  final childName =
+                      (child['username'] ?? child['email'] ?? 'Unknown Child')
+                          .toString();
+                  final childLevel = (child['level'] ?? 1).toString();
+                  final childExp = (child['exp'] ?? 0).toDouble();
+                  final childProgress = (childExp / 100).clamp(0.0, 1.0);
+
+                  return Column(
                     children: [
                       Container(
-                        width: 58,
-                        height: 58,
-                        alignment: Alignment.center,
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xffffb347), Color(0xffff7b54)],
+                            colors: [Color(0xff7048ff), Color(0xff9d72ff)],
                           ),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(30),
                         ),
-                        child: const Text('🧒', style: TextStyle(fontSize: 30)),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Minh Nguyen',
-                              style: TextStyle(
-                                color: Color(0xff2d243b),
-                                fontWeight: FontWeight.bold,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '📝 ${task.title}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 7,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.22),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Text(
+                                    'SUBMITTED',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              task.description,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                height: 1.6,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Current EXP Progress',
-                              style: TextStyle(
-                                color: Color(0xff8b7c99),
-                                fontSize: 12,
+                            const SizedBox(height: 14),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [
+                                _badge('⭐ +${task.expReward} EXP'),
+                                _badge('🎁 +${task.rewardAmount} Coins'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      sectionTitle('Child Information', 'LV $childLevel'),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(color: const Color(0xfff0e7fb)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 58,
+                              height: 58,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xffffb347),
+                                    Color(0xffff7b54),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text(
+                                '🧒',
+                                style: TextStyle(fontSize: 30),
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(999),
-                              child: LinearProgressIndicator(
-                                value: childProvider.expProgress.clamp(0, 1),
-                                minHeight: 8,
-                                backgroundColor: const Color(0xffeee7f7),
-                                color: const Color(0xff7048ff),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    childName,
+                                    style: const TextStyle(
+                                      color: Color(0xff2d243b),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Current EXP Progress',
+                                    style: TextStyle(
+                                      color: Color(0xff8b7c99),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(999),
+                                    child: LinearProgressIndicator(
+                                      value: childProgress,
+                                      minHeight: 8,
+                                      backgroundColor: const Color(0xffeee7f7),
+                                      color: const Color(0xff7048ff),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                sectionTitle('Submitted Proof', 'Image Evidence'),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: const Color(0xfff0e7fb)),
-                  ),
-                  child: Column(
-                    children: [
+                      sectionTitle('Submitted Proof', 'Image Evidence'),
                       Container(
-                        height: 220,
-                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: const Color(0xfff3ecff),
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: const Color(0xffd8c8ff),
-                            width: 2,
-                          ),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: const Color(0xfff0e7fb)),
                         ),
-                        child: Builder(
-  builder: (_) {
-    final imageBytes = decodeProofImage(task.proofImage);
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 220,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: const Color(0xfff3ecff),
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(
+                                  color: const Color(0xffd8c8ff),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Builder(
+                                builder: (_) {
+                                  final imageBytes = decodeProofImage(
+                                    task.proofImage,
+                                  );
 
-    if (imageBytes == null) {
-      return const Text(
-        '📸',
-        style: TextStyle(fontSize: 70),
-      );
-    }
+                                  if (imageBytes == null) {
+                                    return const Text(
+                                      '📸',
+                                      style: TextStyle(fontSize: 70),
+                                    );
+                                  }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: Image.memory(
-        imageBytes,
-        width: double.infinity,
-        height: 220,
-        fit: BoxFit.cover,
-      ),
-    );
-  },
-),
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Image.memory(
+                                      imageBytes,
+                                      width: double.infinity,
+                                      height: 220,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                _proofItem(
+                                  'Submitted Time',
+                                  task.submittedAt == null
+                                      ? 'Just now'
+                                      : '${task.submittedAt!.hour}:${task.submittedAt!.minute.toString().padLeft(2, '0')}',
+                                ),
+                                const SizedBox(width: 12),
+                                _proofItem('Task Difficulty', task.difficulty),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      sectionTitle('Child Note', 'Message'),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(color: const Color(0xfff0e7fb)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '📝 Message from Child',
+                              style: TextStyle(
+                                color: Color(0xff2d243b),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              '"${task.childNote ?? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'}"',
+                              style: TextStyle(
+                                color: Color(0xff6f6280),
+                                height: 1.7,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       Row(
                         children: [
-                          _proofItem(
-                            'Submitted Time',
-                            task.submittedAt == null
-                                ? 'Just now'
-                                : '${task.submittedAt!.hour}:${task.submittedAt!.minute.toString().padLeft(2, '0')}',
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => rejectTask(context, task),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(58),
+                                foregroundColor: const Color(0xffd94343),
+                                side: const BorderSide(
+                                  color: Color(0xffffd4d4),
+                                ),
+                                backgroundColor: const Color(0xfffff0f0),
+                              ),
+                              child: const Text('❌ Reject'),
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          _proofItem('Task Difficulty', task.difficulty),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: () => approveTask(context, task),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(58),
+                                backgroundColor: const Color(0xff7048ff),
+                              ),
+                              child: const Text('✔ Approve'),
+                            ),
+                          ),
                         ],
                       ),
+                      sectionTitle('Recent Verify History', 'Today'),
+                      historyCard(
+                        icon: '📘',
+                        title: 'Homework Approved',
+                        subtitle: '+40 EXP granted to Minh',
+                        time: '7:10 PM',
+                      ),
+                      historyCard(
+                        icon: '🏆',
+                        title: 'Achievement Unlocked',
+                        subtitle: 'Study Hero badge unlocked',
+                        time: '6:40 PM',
+                      ),
+                      const SizedBox(height: 28),
                     ],
-                  ),
-                ),
-                sectionTitle('Child Note', 'Message'),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(26),
-                    border: Border.all(color: const Color(0xfff0e7fb)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '📝 Message from Child',
-                        style: TextStyle(
-                          color: Color(0xff2d243b),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        '"${task.childNote ?? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'}"',
-                        style: TextStyle(color: Color(0xff6f6280), height: 1.7),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => rejectTask(context, task),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(58),
-                          foregroundColor: const Color(0xffd94343),
-                          side: const BorderSide(color: Color(0xffffd4d4)),
-                          backgroundColor: const Color(0xfffff0f0),
-                        ),
-                        child: const Text('❌ Reject'),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => approveTask(context, task),
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(58),
-                          backgroundColor: const Color(0xff7048ff),
-                        ),
-                        child: const Text('✔ Approve'),
-                      ),
-                    ),
-                  ],
-                ),
-                sectionTitle('Recent Verify History', 'Today'),
-                historyCard(
-                  icon: '📘',
-                  title: 'Homework Approved',
-                  subtitle: '+40 EXP granted to Minh',
-                  time: '7:10 PM',
-                ),
-                historyCard(
-                  icon: '🏆',
-                  title: 'Achievement Unlocked',
-                  subtitle: 'Study Hero badge unlocked',
-                  time: '6:40 PM',
-                ),
-              ],
+                  );
+                }),
             ],
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/task_model.dart';
 import 'notification_service.dart';
@@ -213,13 +214,17 @@ class TaskService {
       final parentId = taskData['parentId'];
 
       if (parentId != null) {
-        await NotificationService().createNotificationRequest(
-          receiverId: parentId,
-          title: 'Con đã gửi nhiệm vụ',
-          body: 'Một nhiệm vụ mới đang chờ phụ huynh xác nhận.',
-          type: 'task_submitted',
-          taskId: taskId,
-        );
+        try {
+          await NotificationService().createNotificationRequest(
+            receiverId: parentId,
+            title: 'Con đã gửi nhiệm vụ',
+            body: 'Một nhiệm vụ mới đang chờ phụ huynh xác nhận.',
+            type: 'task_submitted',
+            taskId: taskId,
+          );
+        } catch (e) {
+          debugPrint('SUBMIT_TASK_NOTIFICATION_ERROR: $e');
+        }
       }
     }
   }

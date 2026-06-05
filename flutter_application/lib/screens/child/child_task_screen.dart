@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/activity_provider.dart';
 import '../../services/task_service.dart';
 import 'dart:convert';
 
@@ -194,25 +195,48 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
                   return;
                 }
 
-                final imageBytes = await selectedImage!.readAsBytes();
+                final imageToSubmit = selectedImage;
+                final noteText = noteController.text.trim().isEmpty
+                    ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
+                    : noteController.text.trim();
 
-                final proofImageUrl = base64Encode(imageBytes);
-
-                await TaskService().submitTask(
-                  taskId: task.id,
-                  childNote: noteController.text.trim().isEmpty
-                      ? 'Con đã hoàn thành nhiệm vụ được giao rồi ạ.'
-                      : noteController.text.trim(),
-                  proofImage: proofImageUrl,
-                );
-
-                if (!dialogContext.mounted) return;
+                Navigator.of(dialogContext).pop();
 
                 setState(() {
                   selectedImage = null;
                 });
 
-                Navigator.pop(dialogContext);
+                try {
+                  final imageBytes = await imageToSubmit!.readAsBytes();
+
+                  final proofImageUrl = base64Encode(imageBytes);
+
+                  await TaskService().submitTask(
+                    taskId: task.id,
+                    childNote: noteText,
+                    proofImage: proofImageUrl,
+                  );
+
+                  if (!context.mounted) return;
+
+                  await context.read<ActivityProvider>().addActivity(
+                    childId: task.childId,
+                    title: 'Task Submitted',
+                    description: task.title,
+                  );
+
+                  if (!context.mounted) return;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã gửi nhiệm vụ')),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi gửi nhiệm vụ: $e')),
+                  );
+                }
               },
               child: const Text('Gửi'),
             ),
