@@ -1,57 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
 
-class MapScreen extends StatelessWidget {
+class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  bool _isLoggingOut = false;
+
+  Future<void> _handleLogout() async {
+    setState(() => _isLoggingOut = true);
+    try {
+      await AuthService.logout();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+    } catch (_) {
+      if (mounted) setState(() => _isLoggingOut = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFCF9F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFCF9F0),
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
-          child: Container(
-            color: const Color(0xFF1C1C17),
-            height: 4.0,
-          ),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFF1C1C17), width: 2),
-                color: const Color(0xFFEBE8DF),
-              ),
-              padding: const EdgeInsets.all(2),
-              child: Image.network(
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuANbnqUqMW2K5NRdasOT64u6h9cDV1QdbcfeSGKiwXePOMowlCEESg6tMNaSZ0x7Rv3q1LzXOEoI_QzS-SLhqFOi3HtWFP1Ll_f7ChB9EhbfUtMHoxWf82pgWyqD8PBTHEHFoyoOrdryGU6HedNY0MAMuvvbr_gQ-MJJ_Oa4yKOmbDZ_hZ7T_-Cs0WOzSM1W4LqHywcgH6X8AtUOGDiVg4uKu2FWp87E4HEzTe1MNF677oU1JJ-XnPGDNJC38DYzWX7tl39OQ1JKzmq',
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              "ILLUMINATED ARCHIVE",
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFF1C1C17),
-                letterSpacing: -1,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.map, color: Color(0xFF77574D), size: 30),
-            onPressed: () {},
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
         child: Column(
@@ -90,64 +69,8 @@ class MapScreen extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            // World Map
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFFFF),
-                border: Border.all(color: const Color(0xFF1C1C17), width: 4),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0xFF1C1C17),
-                    offset: Offset(8, 8),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(4),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ColorFiltered(
-                      colorFilter: const ColorFilter.matrix([
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0,      0,      0,      1, 0,
-                      ]), // Grayscale
-                      child: Image.network(
-                        'https://lh3.googleusercontent.com/aida-public/AB6AXuCtRCNnSv37Fg9S64ZeyRcVIZ9ZrrM6ys1L_rxLkaRmVEBhqSOviRlgfYFvBEKWfAIMogQZyeNOqCfV5PPbaCoNrpbppJlBcv99nkPNaeNkC7b76shwr3zLztjSOU2_-8uMRCQ5QOIQzoPmWtSlNunbCz57OO7NazkacMusmFb_qTdAUFeI3eXUBZHi9vyGngO54Soz340OMhQzlkzniKLc8fre2MoVWFJVq2hWkgtma72UuC5bFPKCaB9FuDzYPS70o2NdU78uqzFE',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Container(
-                      color: const Color(0xFFFCF9F0).withOpacity(0.2), // Light overlay
-                    ),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1C1C17),
-                          border: Border.all(color: const Color(0xFFFCF9F0), width: 2),
-                        ),
-                        child: Text(
-                          "LOCATION: THE ARCHIVE CENTER",
-                          style: GoogleFonts.spaceGrotesk(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFFCF9F0),
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
 
-            // Settings Categories
+
             _buildSection(
               title: "ACCOUNT",
               titleBg: const Color(0xFF77574D),
@@ -191,8 +114,56 @@ class MapScreen extends StatelessWidget {
                 _buildMenuItem(icon: Icons.auto_stories, label: "About the Archive", iconColor: const Color(0xFF1B6D24)),
               ],
             ),
-            
-            // Add padding at the bottom so content isn't hidden behind BottomNavigationBar
+            const SizedBox(height: 40),
+
+            // ── ĐĂNG XUẤT ──────────────────────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEBEE),
+                border: Border.all(color: const Color(0xFFBA1A1A), width: 2),
+                boxShadow: const [
+                  BoxShadow(color: Color(0xFFBA1A1A), offset: Offset(4, 4)),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _isLoggingOut ? null : _handleLogout,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.logout, color: Color(0xFFBA1A1A), size: 22),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            'ĐĂNG XUẤT',
+                            style: GoogleFonts.spaceGrotesk(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFFBA1A1A),
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                        if (_isLoggingOut)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFBA1A1A),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        else
+                          const Icon(Icons.chevron_right, color: Color(0xFFBA1A1A)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 80),
           ],
         ),
@@ -226,9 +197,7 @@ class MapScreen extends StatelessWidget {
           decoration: const BoxDecoration(
             border: Border(top: BorderSide(color: Color(0xFF1C1C17), width: 4)),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -242,7 +211,9 @@ class MapScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF6F3EA),
-        border: Border(bottom: BorderSide(color: const Color(0xFF1C1C17).withOpacity(0.1), width: 2)),
+        border: Border(
+          bottom: BorderSide(color: const Color(0xFF1C1C17).withOpacity(0.1), width: 2),
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -283,7 +254,9 @@ class MapScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF6F3EA),
-        border: Border(bottom: BorderSide(color: const Color(0xFF1C1C17).withOpacity(0.1), width: 2)),
+        border: Border(
+          bottom: BorderSide(color: const Color(0xFF1C1C17).withOpacity(0.1), width: 2),
+        ),
       ),
       padding: const EdgeInsets.all(16.0),
       child: Row(

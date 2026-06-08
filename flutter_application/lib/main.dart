@@ -1,7 +1,18 @@
-import 'package:flutter/material.dart'; // THIẾU DÒNG NÀY SẼ GÂY RA TẤT CẢ LỖI TRÊN
-import 'screens/login_screen.dart';   // Import file điều hướng của bạn
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'screens/login_screen.dart';
+import 'seed/game_seed.dart'; // <-- IMPORT SEED
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // TỰ ĐỘNG CHẠY SEED DỮ LIỆU KHI KHỞI ĐỘNG APP
+  await GameSeed.seedToFirestore();
+  
   runApp(const MyApp());
 }
 
@@ -12,12 +23,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      title: 'LifeRPG',
       theme: ThemeData(
-        primarySwatch: Colors.blue, 
-        useMaterial3: true
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
-      // Mở màn hình Login khi khởi chạy
-      home: const LoginScreen(), 
+      home: const LoginScreen(),
     );
   }
 }

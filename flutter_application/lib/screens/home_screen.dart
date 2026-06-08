@@ -1,113 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/task_model.dart';
+import '../models/hero_model.dart';
+import '../services/auth_service.dart';
+import '../services/task_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? _heroUid;
+  bool _progressSnackBarVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHero();
+  }
+
+  void _loadHero() async {
+    final account = await AuthService.getCurrentAccount();
+    if (account != null && mounted) {
+      setState(() {
+        _heroUid = account.uid;
+      });
+    }
+  }
+
+  void _showProgressSavedSnackBar(String taskTitle) {
+    if (_progressSnackBarVisible) return;
+
+    _progressSnackBarVisible = true;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+          SnackBar(
+            content: Text('PROGRESS SAVED FOR: $taskTitle'),
+            backgroundColor: const Color(0xFF2E7D32),
+          ),
+        )
+        .closed
+        .then((_) {
+          _progressSnackBarVisible = false;
+        });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFCF9F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF6F3EA),
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2.0),
-          child: Container(
-            color: const Color(0xFF1C1C17),
-            height: 2.0,
-          ),
-        ),
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(0),
-              child: Image.network(
-                'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                width: 32,
-                height: 32,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              "Hoang",
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFF1C1C17),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu_book, color: Color(0xFF1C1C17)),
-            onPressed: () {},
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Adventurer Stats + Notification Badge Overlay
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 16),
-                  child: _buildAdventurerStats(),
-                ),
-                Positioned(
-                  top: 0,
-                  right: 16,
-                  child: _buildNotificationBadge(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            
+
+
             // Level and Gold
-            Row(
-              children: [
-                Expanded(child: _buildStatBox(Icons.emoji_events, "LEVEL", "14")),
-                const SizedBox(width: 16),
-                Expanded(child: _buildStatBox(Icons.payments, "GOLD PIECES", "2,450")),
-              ],
+            StreamBuilder<HeroModel?>(
+              stream: _heroUid != null
+                  ? AuthService.getHeroStream(_heroUid!)
+                  : const Stream.empty(),
+              builder: (context, snapshot) {
+                final hero = snapshot.data;
+                final levelStr = hero?.level.toString() ?? "-";
+                final goldStr = hero?.gold.toString() ?? "-";
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatBox(
+                        Icons.emoji_events,
+                        "LEVEL",
+                        levelStr,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatBox(
+                        Icons.payments,
+                        "GOLD PIECES",
+                        goldStr,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 32),
-            
-            // Daily Challenges Title
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, size: 28, color: Color(0xFF5E35B1)),
-                const SizedBox(width: 8),
-                Text(
-                  "DAILY CHALLENGES",
-                  style: GoogleFonts.spaceGrotesk(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                    color: const Color(0xFF1C1C17),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            // Daily Challenges List
-            _buildDailyChallenge("HYDRATION POTION: DRINK 2L WATER", 50, false),
-            const SizedBox(height: 12),
-            _buildDailyChallenge("SUNRISE RITUAL: WAKE BY 7AM", 100, true),
-            const SizedBox(height: 12),
-            _buildDailyChallenge("TOME OF KNOWLEDGE: READ 10 PAGES", 75, false),
-            const SizedBox(height: 12),
-            _buildDailyChallenge("STRENGTH TRAINING: 20 PUSHUPS", 150, false),
-            
-            const SizedBox(height: 32),
-            
+            const SizedBox(height: 20),
+
             // Active Quests Title
             Row(
               children: [
@@ -130,49 +114,81 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
-            // Active Quests List
-            _buildQuestCard(
-              title: "THE PROJECT GOLIATH: COMPLETE QUARTERLY REPORT",
-              description: "Slay the bureaucratic giant by assembling all department metrics into a cohesive 40-page parchment. Requires focus and high-level clerical skills.",
-              difficulty: "HARD",
-              exp: 5000,
-              gold: 500,
-              statusLabel: "TIME REMAINING",
-              statusValue: "4D : 12H : 08M",
-              buttonText: "CLAIM VICTORY",
-              buttonColor: const Color(0xFFD4AF37),
-              difficultyColor: const Color(0xFFBA1A1A),
-            ),
-            const SizedBox(height: 24),
-            
-            _buildQuestCard(
-              title: "THE ALCHEMIST'S PANTRY: MEAL PREP FOR WEEK",
-              description: "Concoct 5 days worth of sustaining rations to prevent the 'Starving' debuff during the work week questline.",
-              difficulty: "MEDIUM",
-              exp: 1200,
-              gold: 150,
-              statusLabel: "PROGRESS",
-              statusValue: "3 / 5 Prepped",
-              buttonText: "CONTINUE",
-              buttonColor: const Color(0xFF5E35B1),
-              difficultyColor: const Color(0xFF5E35B1),
-            ),
-            const SizedBox(height: 24),
 
-            _buildQuestCard(
-              title: "CLEAN THE ARMORY: TIDY THE DESK",
-              description: "Remove the chaotic clutter from your command station to increase Focus stats by +5.",
-              difficulty: "EASY",
-              exp: 300,
-              gold: 20,
-              statusLabel: "STATUS",
-              statusValue: "READY",
-              buttonText: "CLAIM VICTORY",
-              buttonColor: const Color(0xFFD4AF37),
-              difficultyColor: const Color(0xFFD0C5AF),
-            ),
-            
+            // Active Quests List
+            if (_heroUid != null)
+              StreamBuilder<List<TaskModel>>(
+                stream: TaskService.getTasksForHero(_heroUid!),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final tasks = snapshot.data ?? [];
+                  // Lọc bỏ những task đã fail hoặc completed nếu muốn, hoặc hiển thị tất cả
+                  final activeTasks = tasks
+                      .where((t) => t.status == 'todo')
+                      .toList();
+
+                  if (activeTasks.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: const Color(0xFF1C1C17),
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "NO ACTIVE QUESTS.\nENJOY YOUR REST.",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF7F7663),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: activeTasks.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 24),
+                    itemBuilder: (context, index) {
+                      final task = activeTasks[index];
+                      final difficulty = task.difficulty;
+                      final diffColor = switch (difficulty) {
+                        'HARD' => const Color(0xFFBA1A1A),
+                        'MEDIUM' => const Color(0xFF5E35B1),
+                        _ => const Color(0xFFD0C5AF),
+                      };
+
+                      return _buildQuestCard(
+                        task: task,
+                        title: task.title,
+                        description: task.description,
+                        difficulty: difficulty,
+                        exp: task.expReward,
+                        gold: task.goldReward,
+                        statusLabel: "PROGRESS",
+                        statusValue:
+                            "${task.currentProgress} / ${task.targetCount}",
+                        buttonText: task.currentProgress + 1 >= task.targetCount
+                            ? "FINISH QUEST"
+                            : "PROGRESS (+1)",
+                        buttonColor: const Color(0xFFD4AF37),
+                        difficultyColor: diffColor,
+                      );
+                    },
+                  );
+                },
+              ),
+
             const SizedBox(height: 32),
           ],
         ),
@@ -187,10 +203,7 @@ class HomeScreen extends StatelessWidget {
         color: const Color(0xFFFFFFFF),
         border: Border.all(color: const Color(0xFF1C1C17), width: 2),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0xFF1C1C17),
-            offset: Offset(4, 4),
-          ),
+          BoxShadow(color: Color(0xFF1C1C17), offset: Offset(4, 4)),
         ],
       ),
       child: Row(
@@ -222,7 +235,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -235,10 +248,7 @@ class HomeScreen extends StatelessWidget {
         color: const Color(0xFFF6F3EA),
         border: Border.all(color: const Color(0xFF1C1C17), width: 2),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0xFF1C1C17),
-            offset: Offset(6, 6),
-          ),
+          BoxShadow(color: Color(0xFF1C1C17), offset: Offset(6, 6)),
         ],
       ),
       child: Column(
@@ -253,15 +263,30 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildProgressBar("HEALTH POINTS (HP)", "85 / 100", 0.85, const Color(0xFFBA1A1A)),
+          _buildProgressBar(
+            "HEALTH POINTS (HP)",
+            "85 / 100",
+            0.85,
+            const Color(0xFFBA1A1A),
+          ),
           const SizedBox(height: 12),
-          _buildProgressBar("STAMINA (DAILY ENERGY)", "42 / 60", 0.7, const Color(0xFF5E35B1)),
+          _buildProgressBar(
+            "STAMINA (DAILY ENERGY)",
+            "42 / 60",
+            0.7,
+            const Color(0xFF5E35B1),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProgressBar(String label, String value, double percent, Color color) {
+  Widget _buildProgressBar(
+    String label,
+    String value,
+    double percent,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -299,7 +324,9 @@ class HomeScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: color,
-                border: const Border(right: BorderSide(color: Color(0xFF1C1C17), width: 2)),
+                border: const Border(
+                  right: BorderSide(color: Color(0xFF1C1C17), width: 2),
+                ),
               ),
             ),
           ),
@@ -310,15 +337,12 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildStatBox(IconData icon, String label, String value) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF6F3EA),
         border: Border.all(color: const Color(0xFF1C1C17), width: 2),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0xFF1C1C17),
-            offset: Offset(4, 4),
-          ),
+          BoxShadow(color: Color(0xFF1C1C17), offset: Offset(4, 4)),
         ],
       ),
       child: Row(
@@ -351,80 +375,13 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDailyChallenge(String title, int exp, bool isDone) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDone ? const Color(0xFFF6F3EA) : const Color(0xFFF6F3EA),
-        border: Border.all(color: isDone ? const Color(0xFF1C1C17).withOpacity(0.5) : const Color(0xFF5E35B1), width: 2),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isDone ? Icons.check_circle : Icons.local_drink, // approximate icon based on text
-            color: isDone ? Colors.grey : const Color(0xFF5E35B1),
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.spaceGrotesk(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: isDone ? Colors.grey : const Color(0xFF1C1C17),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      "REWARD: ",
-                      style: GoogleFonts.spaceGrotesk(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const Icon(Icons.star, size: 10, color: Color(0xFFD4AF37)),
-                    Text(
-                      " $exp EXP",
-                      style: GoogleFonts.spaceGrotesk(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFFD4AF37),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            color: isDone ? Colors.grey.shade300 : const Color(0xFFE1BEE7),
-            child: Text(
-              isDone ? "DONE" : "DAILY",
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-                color: isDone ? Colors.grey.shade600 : const Color(0xFF5E35B1),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildSmallButton(String text) {
     return Container(
@@ -446,6 +403,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildQuestCard({
+    required TaskModel task,
     required String title,
     required String description,
     required String difficulty,
@@ -462,10 +420,7 @@ class HomeScreen extends StatelessWidget {
         color: const Color(0xFFFFFFFF),
         border: Border.all(color: const Color(0xFF1C1C17), width: 2),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0xFF1C1C17),
-            offset: Offset(6, 6),
-          ),
+          BoxShadow(color: Color(0xFF1C1C17), offset: Offset(6, 6)),
         ],
       ),
       child: Column(
@@ -488,8 +443,19 @@ class HomeScreen extends StatelessWidget {
                             width: 12,
                             height: 12,
                             decoration: BoxDecoration(
-                              color: index < (difficulty == "HARD" ? 3 : difficulty == "MEDIUM" ? 2 : 1) ? difficultyColor : Colors.transparent,
-                              border: Border.all(color: difficultyColor, width: 2),
+                              color:
+                                  index <
+                                      (difficulty == "HARD"
+                                          ? 3
+                                          : difficulty == "MEDIUM"
+                                          ? 2
+                                          : 1)
+                                  ? difficultyColor
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: difficultyColor,
+                                width: 2,
+                              ),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -537,11 +503,13 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Bottom Part
           Container(
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0xFF1C1C17), width: 2)),
+              border: Border(
+                top: BorderSide(color: Color(0xFF1C1C17), width: 2),
+              ),
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -569,7 +537,23 @@ class HomeScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 40,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      try {
+                        await TaskService.incrementTaskProgress(task);
+                        if (mounted) {
+                          _showProgressSavedSnackBar(task.title);
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('ERROR: $e'),
+                              backgroundColor: const Color(0xFFBA1A1A),
+                            ),
+                          );
+                        }
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: buttonColor,
                       foregroundColor: Colors.white,
@@ -577,7 +561,10 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.zero,
                       ),
                       elevation: 0,
-                      side: const BorderSide(color: Color(0xFF1C1C17), width: 2),
+                      side: const BorderSide(
+                        color: Color(0xFF1C1C17),
+                        width: 2,
+                      ),
                     ),
                     child: Text(
                       buttonText,
