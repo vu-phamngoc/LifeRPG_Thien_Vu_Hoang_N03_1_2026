@@ -280,3 +280,7 @@ Hoàn thiện ứng dụng Life RPG như một nền tảng hỗ trợ phụ huy
 ```txt
 Đang trong quá trình phát triển và hoàn thiện kiến trúc hệ thống.
 ```
+# Thành viên 
+- Phạm Ngọc Vũ - 23010192
+- Nguyễn Hoàng Thiên - 23010139
+_...
