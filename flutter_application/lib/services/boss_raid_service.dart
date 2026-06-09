@@ -388,10 +388,10 @@ class BossRaidService {
       if (heroUpdates.isNotEmpty) tx.update(heroRef, heroUpdates);
 
       return RaidSkillResult(
-        skill: skill,
-        amount: amount,
+        skillUsed: skill,
+        progressContributed: amount,
         critical: critical,
-        bossHp: nextBossHp,
+        currentProgress: nextBossHp,
         heroHp: heroHp,
         heroStamina: heroStamina,
         heroMana: heroMana,

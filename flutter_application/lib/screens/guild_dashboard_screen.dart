@@ -1481,20 +1481,32 @@ class _QuestCardState extends State<_QuestCard> {
                 ),
               ],
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Left Accent Color Block representing Quest status
-            Container(width: 6, color: statusColor),
-            // Vertical Separator Border
-            Container(width: 1.5, color: const Color(0xFF1C1C17)),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      child: Stack(
+        children: [
+          // Left Accent Color Block representing Quest status
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 6,
+            child: Container(color: statusColor),
+          ),
+          // Vertical Separator Border
+          Positioned(
+            left: 6,
+            top: 0,
+            bottom: 0,
+            width: 1.5,
+            child: Container(color: const Color(0xFF1C1C17)),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 7.5),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                     // Header Row: Title & Status Chip
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2054,7 +2066,6 @@ class _QuestCardState extends State<_QuestCard> {
             ),
           ],
         ),
-      ),
     );
   }
 }

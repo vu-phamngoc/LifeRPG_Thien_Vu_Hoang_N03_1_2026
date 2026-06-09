@@ -304,64 +304,89 @@ class BossRaidDefinition {
   }
 }
 
-class BossRaidState {
-  final String guildId;
-  final String bossId;
-  final String bossName;
-  final String bossPhase;
-  final int bossMaxHp;
-  final int currentHp;
-  final DateTime? lastBossAttackAt;
-  final bool defeated;
+enum GuildEventType { bossRaid, exploration, defense, puzzle }
 
-  const BossRaidState({
+class GuildEventState {
+  final String guildId;
+  final String eventId;
+  final String eventName;
+  final String eventPhase;
+  final int maxProgress;
+  final int currentProgress;
+  final bool isCompleted;
+  final GuildEventType type;
+  final Map<String, dynamic> customData;
+
+  const GuildEventState({
     required this.guildId,
-    required this.bossId,
-    required this.bossName,
-    required this.bossPhase,
-    required this.bossMaxHp,
-    required this.currentHp,
-    this.lastBossAttackAt,
-    this.defeated = false,
+    required this.eventId,
+    required this.eventName,
+    required this.eventPhase,
+    required this.maxProgress,
+    required this.currentProgress,
+    this.isCompleted = false,
+    this.type = GuildEventType.bossRaid,
+    this.customData = const {},
   });
 
-  factory BossRaidState.fromGuildMap(
+  // Backward-compatibility getters for Boss Raid
+  String get bossId => eventId;
+  String get bossName => eventName;
+  String get bossPhase => eventPhase;
+  int get bossMaxHp => maxProgress;
+  int get currentHp => currentProgress;
+  bool get defeated => isCompleted;
+  DateTime? get lastBossAttackAt => customData['lastBossAttackAt'] as DateTime?;
+
+  factory GuildEventState.fromGuildMap(
     Map<String, dynamic> map,
     String guildId,
-    BossRaidDefinition boss,
+    BossRaidDefinition boss, // For legacy
   ) {
-    return BossRaidState(
+    return GuildEventState(
       guildId: guildId,
-      bossId:
+      eventId:
           (map['activeBossId'] as String?) ??
           (map['bossId'] as String?) ??
           boss.id,
-      bossName: boss.name,
-      bossPhase: boss.phase,
-      bossMaxHp: boss.maxHp,
-      currentHp: (map['bossHp'] as num?)?.toInt() ?? boss.maxHp,
-      lastBossAttackAt: (map['lastBossAttackAt'] as Timestamp?)?.toDate(),
-      defeated: map['bossDefeated'] as bool? ?? false,
+      eventName: boss.name,
+      eventPhase: boss.phase,
+      maxProgress: boss.maxHp,
+      currentProgress: (map['bossHp'] as num?)?.toInt() ?? boss.maxHp,
+      isCompleted: map['bossDefeated'] as bool? ?? false,
+      type: GuildEventType.bossRaid,
+      customData: {
+        'lastBossAttackAt': (map['lastBossAttackAt'] as Timestamp?)?.toDate(),
+      },
     );
   }
 }
 
-class RaidSkillResult {
-  final RaidHeroSkill skill;
-  final int amount;
+typedef BossRaidState = GuildEventState;
+
+class EventActionResult {
+  final RaidHeroSkill skillUsed;
+  final int progressContributed;
   final bool critical;
-  final int bossHp;
+  final int currentProgress;
   final int heroHp;
   final int heroStamina;
   final int heroMana;
 
-  const RaidSkillResult({
-    required this.skill,
-    required this.amount,
+  const EventActionResult({
+    required this.skillUsed,
+    required this.progressContributed,
     required this.critical,
-    required this.bossHp,
+    required this.currentProgress,
     required this.heroHp,
     required this.heroStamina,
     required this.heroMana,
   });
+
+  // Backward-compatibility getters for Boss Raid
+  RaidHeroSkill get skill => skillUsed;
+  int get amount => progressContributed;
+  int get bossHp => currentProgress;
 }
+
+typedef RaidSkillResult = EventActionResult;
