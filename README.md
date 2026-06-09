@@ -286,4 +286,4 @@ Hoàn thiện ứng dụng Life RPG như một nền tảng hỗ trợ phụ huy
 _...
 
 # Sơ đồ Kiến trúc tổng thể
-![alt text](sơdokientruc.png)
+![alt text](SODO.png)
