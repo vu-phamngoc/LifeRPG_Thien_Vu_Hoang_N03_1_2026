@@ -232,6 +232,9 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
           actions: [
             TextButton(
               onPressed: () {
+                setState(() {
+                  selectedImage = null;
+                });
                 Navigator.pop(dialogContext);
               },
               child: const Text('Hủy'),
@@ -243,6 +246,13 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
                     const SnackBar(
                       content: Text('Vui lòng chọn hoặc chụp ảnh minh chứng.'),
                     ),
+                  );
+                  return;
+                }
+
+                if (noteController.text.trim().length > 200) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Ghi chú tối đa 200 ký tự.')),
                   );
                   return;
                 }

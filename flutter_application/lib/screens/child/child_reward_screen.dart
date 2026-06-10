@@ -224,7 +224,20 @@ class _ChildRewardScreenState extends State<ChildRewardScreen> {
                         reward.id,
                       );
 
-                      final childId = FirebaseAuth.instance.currentUser!.uid;
+                      final user = FirebaseAuth.instance.currentUser;
+
+                      if (user == null) {
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Phiên đăng nhập hết hạn'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      final childId = user.uid;
 
                       if (!context.mounted) return;
 

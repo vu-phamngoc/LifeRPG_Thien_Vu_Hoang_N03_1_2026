@@ -117,6 +117,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       return;
     }
 
+    if (title.length > 50) {
+      _showMessage('Tên nhiệm vụ tối đa 50 ký tự');
+      return;
+    }
+
     if (description.isEmpty) {
       _showMessage('Vui lòng nhập mô tả nhiệm vụ');
       return;
@@ -127,13 +132,28 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       return;
     }
 
+    if (expReward > 1000) {
+      _showMessage('EXP tối đa 1000');
+      return;
+    }
+
     if (rewardAmount < 0) {
       _showMessage('Tiền thưởng không được âm');
       return;
     }
 
+    if (rewardAmount > 10000) {
+      _showMessage('Coin tối đa 10000');
+      return;
+    }
+
     if (deadlineController.text.trim().isNotEmpty && deadlineAt == null) {
       _showMessage('Deadline phải có dạng dd/MM/yyyy HH:mm');
+      return;
+    }
+
+    if (deadlineAt != null && deadlineAt.isBefore(DateTime.now())) {
+      _showMessage('Deadline không được ở quá khứ');
       return;
     }
 
