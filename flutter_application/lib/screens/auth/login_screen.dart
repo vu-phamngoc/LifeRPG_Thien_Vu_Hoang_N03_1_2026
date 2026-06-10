@@ -114,71 +114,110 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Đăng nhập'), centerTitle: true),
+      backgroundColor: const Color(0xFFF7F3EA),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight:
-                  MediaQuery.of(context).size.height - kToolbarHeight - 48,
+              minHeight: size.height - MediaQuery.of(context).padding.top - 48,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const Icon(
+                  Icons.shield_moon_rounded,
+                  size: 80,
+                  color: Color(0xFFFF8A65),
+                ),
+
+                const SizedBox(height: 20),
+
                 const Text(
-                  'Life RPG',
-                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+                  'KidQuest',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3E2723),
+                  ),
                 ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Quản lý nhiệm vụ cho trẻ em',
+                  style: TextStyle(color: Color(0xFF8D6E63)),
+                ),
+
                 const SizedBox(height: 32),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Mật khẩu',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _isLoading ? null : _login,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Đăng nhập'),
-                  ),
-                ),
-                TextButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.email),
+                            labelText: 'Email',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
                             ),
-                          );
-                        },
-                  child: const Text('Chưa có tài khoản? Đăng ký'),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.lock),
+                            labelText: 'Mật khẩu',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: FilledButton(
+                            onPressed: _isLoading ? null : _login,
+                            child: _isLoading
+                                ? const CircularProgressIndicator()
+                                : const Text('Đăng nhập'),
+                          ),
+                        ),
+
+                        TextButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen(),
+                                    ),
+                                  );
+                                },
+                          child: const Text('Chưa có tài khoản? Đăng ký'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
