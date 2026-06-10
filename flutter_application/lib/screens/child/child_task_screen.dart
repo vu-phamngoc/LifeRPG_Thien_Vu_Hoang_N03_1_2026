@@ -74,35 +74,87 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
     }).toList();
   }
 
+  Widget buildSummaryCard({
+    required String value,
+    required String label,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        height: 110,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xfff0e7fb)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .05),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+            ),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget buildFilterChip(String label) {
     final active = selectedFilter == label;
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedFilter = label;
-        });
-      },
-
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-
-        decoration: BoxDecoration(
-          color: active ? Colors.deepPurple : Colors.white,
-
-          borderRadius: BorderRadius.circular(999),
-
-          border: Border.all(
-            color: active ? Colors.deepPurple : Colors.grey.shade300,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            selectedFilter = label;
+          });
+        },
+        child: Container(
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active ? const Color(0xff7048ff) : Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: active ? const Color(0xff7048ff) : const Color(0xffe5ddea),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        ),
-
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.white : Colors.black87,
-
-            fontWeight: FontWeight.bold,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: active ? Colors.white : const Color(0xff2d243b),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ),
@@ -250,178 +302,162 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
     final isExpired = task.isExpired;
     final statusColor = isExpired ? Colors.grey : getStatusColor(task.status);
 
+    String actionText;
+    if (isExpired && task.status == TaskStatus.pending) {
+      actionText = 'Task Locked - Deadline Expired';
+    } else if (task.status == TaskStatus.pending) {
+      actionText = 'Submit Task';
+    } else if (task.status == TaskStatus.submitted) {
+      actionText = 'Waiting for Parent';
+    } else if (task.status == TaskStatus.approved) {
+      actionText = 'Completed';
+    } else {
+      actionText = 'Rejected';
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(20),
-
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-
-        border: Border.all(color: Colors.grey.shade200),
-
+        border: Border.all(color: const Color(0xfff0e7fb)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: .06),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  task.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '📘 ${task.title}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xff1f1b2d),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      task.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xff6f6b75),
+                        fontSize: 14,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
+              const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                  horizontal: 14,
+                  vertical: 9,
                 ),
-
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-
+                  color: statusColor.withValues(alpha: .14),
                   borderRadius: BorderRadius.circular(999),
                 ),
-
                 child: Text(
                   isExpired ? 'Expired' : getStatusText(task.status),
-
                   style: TextStyle(
                     color: statusColor,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            task.description,
-            style: TextStyle(color: Colors.grey.shade700, height: 1.5),
-          ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            'Deadline: ${task.deadlineText}',
-            style: TextStyle(
-              color: isExpired ? Colors.red : Colors.grey.shade600,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-
           const SizedBox(height: 18),
-
-          Row(
+          Text(
+            isExpired
+                ? 'Expired: ${task.deadlineText}'
+                : 'Deadline: ${task.deadlineText}',
+            style: TextStyle(
+              color: isExpired ? Colors.redAccent : const Color(0xff7d7785),
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.12),
-
-                  borderRadius: BorderRadius.circular(16),
-                ),
-
-                child: Text(
-                  '+${task.expReward} EXP',
-                  style: const TextStyle(
-                    color: Colors.orange,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              _rewardChip(
+                '+${task.expReward} EXP',
+                const Color(0xfffff0d8),
+                const Color(0xffff8a00),
               ),
-
-              const SizedBox(width: 12),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.12),
-
-                  borderRadius: BorderRadius.circular(16),
-                ),
-
-                child: Text(
-                  '${task.rewardAmount}đ',
-                  style: const TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              _rewardChip(
+                '${task.rewardAmount}đ',
+                const Color(0xffe8f7e9),
+                const Color(0xff39b54a),
+              ),
+              _rewardChip(
+                'Quest',
+                const Color(0xfff1e9ff),
+                const Color(0xff7048ff),
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          if (task.status == TaskStatus.pending && !isExpired)
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  showSubmitDialog(context, task);
-                },
-                child: const Text('Submit Task'),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: task.status == TaskStatus.pending && !isExpired
+                    ? const Color(0xffff9f43)
+                    : Colors.grey.shade300,
+                foregroundColor: task.status == TaskStatus.pending && !isExpired
+                    ? Colors.white
+                    : Colors.grey.shade700,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              onPressed: task.status == TaskStatus.pending && !isExpired
+                  ? () => showSubmitDialog(context, task)
+                  : null,
+              child: Text(
+                actionText,
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
-
-          if (task.status == TaskStatus.pending && isExpired)
-            const SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: null,
-                child: Text('Task Locked - Deadline Expired'),
-              ),
-            ),
-
-          if (task.status == TaskStatus.submitted)
-            const SizedBox(
-              width: double.infinity,
-
-              child: FilledButton(
-                onPressed: null,
-                child: Text('Waiting for Parent'),
-              ),
-            ),
-
-          if (task.status == TaskStatus.approved)
-            const SizedBox(
-              width: double.infinity,
-
-              child: FilledButton(onPressed: null, child: Text('Completed')),
-            ),
-
-          if (task.status == TaskStatus.rejected)
-            const SizedBox(
-              width: double.infinity,
-
-              child: FilledButton(onPressed: null, child: Text('Rejected')),
-            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _rewardChip(String text, Color bg, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -435,68 +471,114 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
     return Scaffold(
       backgroundColor: const Color(0xfffffaff),
 
-      appBar: AppBar(title: const Text('Tasks'), centerTitle: true),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [Color(0xffefe5ff), Color(0xfffffaff), Color(0xffffffff)],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Task Management',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xff1f1b2d),
+                  ),
+                ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+                const SizedBox(height: 10),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+                const Text(
+                  'Theo dõi tiến độ nhiệm vụ',
+                  style: TextStyle(
+                    color: Color(0xff8b7c99),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
 
-          children: [
-            const Text(
-              'Task Management',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
+                const SizedBox(height: 24),
 
-            const SizedBox(height: 10),
-
-            const Text(
-              'Theo dõi tiến độ nhiệm vụ',
-              style: TextStyle(color: Colors.black54, fontSize: 16),
-            ),
-
-            const SizedBox(height: 24),
-
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-
-              child: Row(
-                children: [
-                  buildFilterChip('All'),
-                  const SizedBox(width: 10),
-
-                  buildFilterChip('Pending'),
-
-                  const SizedBox(width: 10),
-
-                  buildFilterChip('Submitted'),
-
-                  const SizedBox(width: 10),
-
-                  buildFilterChip('Approved'),
-
-                  const SizedBox(width: 10),
-
-                  buildFilterChip('Rejected'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            Expanded(
-              child: filteredTasks.isEmpty
-                  ? const Center(child: Text('No Tasks'))
-                  : ListView.builder(
-                      itemCount: filteredTasks.length,
-
-                      itemBuilder: (context, index) {
-                        return buildTaskCard(context, filteredTasks[index]);
-                      },
+                Row(
+                  children: [
+                    buildSummaryCard(
+                      value: tasks.length.toString(),
+                      label: 'Total',
+                      icon: Icons.task_alt,
+                      color: Colors.blue,
                     ),
+                    const SizedBox(width: 12),
+                    buildSummaryCard(
+                      value: tasks
+                          .where((task) => task.status == TaskStatus.pending)
+                          .length
+                          .toString(),
+                      label: 'Pending',
+                      icon: Icons.hourglass_top,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(width: 12),
+                    buildSummaryCard(
+                      value: tasks
+                          .where((task) => task.status == TaskStatus.approved)
+                          .length
+                          .toString(),
+                      label: 'Done',
+                      icon: Icons.check_circle,
+                      color: Colors.green,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    buildFilterChip('All'),
+                    const SizedBox(width: 8),
+                    buildFilterChip('Pending'),
+                    const SizedBox(width: 8),
+                    buildFilterChip('Submitted'),
+                    const SizedBox(width: 8),
+                    buildFilterChip('Approved'),
+                    const SizedBox(width: 8),
+                    buildFilterChip('Rejected'),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                if (filteredTasks.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 80),
+                    child: Center(
+                      child: Text(
+                        'No Tasks',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Column(
+                    children: filteredTasks
+                        .map((task) => buildTaskCard(context, task))
+                        .toList(),
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
