@@ -15,24 +15,28 @@ class FamilyProvider extends ChangeNotifier {
   bool get hasChildren => _children.isNotEmpty;
 
   void listenToLinkedChildren() {
-  _childrenSubscription?.cancel();
+    _childrenSubscription?.cancel();
 
-  _childrenSubscription =
-      _userService.getLinkedChildrenStream().listen(
-    (children) {
-      _children = children;
-      notifyListeners();
-    },
-    onError: (error) {
-      debugPrint('FamilyProvider listen error: $error');
-      _children = [];
-      notifyListeners();
-    },
-  );
-}
+    _childrenSubscription = _userService.getLinkedChildrenStream().listen(
+      (children) {
+        _children = children;
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('FamilyProvider listen error: $error');
+        _children = [];
+        notifyListeners();
+      },
+    );
+  }
 
   Future<void> linkChild(String childId) async {
     await _userService.linkChildToParent(childId);
+    listenToLinkedChildren();
+  }
+
+  Future<void> linkChildByCode(String code) async {
+    await _userService.linkChildByCode(code);
     listenToLinkedChildren();
   }
 
