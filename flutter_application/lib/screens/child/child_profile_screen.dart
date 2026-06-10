@@ -317,6 +317,10 @@ class ChildProfileScreen extends StatelessWidget {
 
         final phone = user['phone'] ?? '';
 
+        final linkCode = user['linkCode'] ?? 'Chưa có';
+
+        final isLinked = (user['parentId'] ?? '').toString().isNotEmpty;
+
         final exp = user['exp'] ?? 0;
         final level = user['level'] ?? 1;
         final maxExp = level * 100;
@@ -515,6 +519,11 @@ class ChildProfileScreen extends StatelessWidget {
                         infoRow('Email', email),
                         infoRow('Phone', phone),
                         infoRow('Role', 'Child'),
+                        infoRow('Mã liên kết', linkCode),
+                        infoRow(
+                          'Trạng thái',
+                          isLinked ? 'Đã liên kết' : 'Chưa liên kết',
+                        ),
                         infoRow('Joined', 'May 2026'),
                       ],
                     ),
