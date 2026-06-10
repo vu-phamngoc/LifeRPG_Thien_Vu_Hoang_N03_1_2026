@@ -168,6 +168,54 @@ class UserService {
     });
   }
 
+  Future<void> linkChildByCode(String code) async {
+    final parent = _auth.currentUser;
+
+    if (parent == null) {
+      throw Exception('Parent chưa đăng nhập');
+    }
+
+    final normalizedCode = code.trim().toUpperCase();
+
+    if (normalizedCode.isEmpty) {
+      throw Exception('Vui lòng nhập mã liên kết');
+    }
+
+    final snapshot = await _firestore
+        .collection('children')
+        .where('linkCode', isEqualTo: normalizedCode)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      throw Exception('Mã liên kết không tồn tại');
+    }
+
+    final childDoc = snapshot.docs.first;
+    final childData = childDoc.data();
+    final currentParentId = childData['parentId'] as String?;
+
+    if (currentParentId != null && currentParentId.isNotEmpty) {
+      throw Exception('Tài khoản Child này đã được liên kết');
+    }
+
+    await childDoc.reference.update({
+      'parentId': parent.uid,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    await _firestore
+        .collection('parents')
+        .doc(parent.uid)
+        .collection('children')
+        .doc(childDoc.id)
+        .set({
+          'childId': childDoc.id,
+          'linkCode': normalizedCode,
+          'linkedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
   Stream<List<Map<String, dynamic>>> getLinkedChildrenStream() {
     final parent = _auth.currentUser;
 
