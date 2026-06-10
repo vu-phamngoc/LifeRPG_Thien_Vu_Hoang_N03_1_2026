@@ -188,15 +188,15 @@ class UserService {
         .get();
 
     if (snapshot.docs.isEmpty) {
-      throw Exception('Mã liên kết không tồn tại');
+      throw Exception('Không tìm thấy Child');
     }
 
     final childDoc = snapshot.docs.first;
-    final childData = childDoc.data();
-    final currentParentId = childData['parentId'] as String?;
 
-    if (currentParentId != null && currentParentId.isNotEmpty) {
-      throw Exception('Tài khoản Child này đã được liên kết');
+    final parentId = (childDoc.data()['parentId'] ?? '').toString();
+
+    if (parentId.isNotEmpty) {
+      throw Exception('Child đã được liên kết');
     }
 
     await childDoc.reference.update({
@@ -211,9 +211,41 @@ class UserService {
         .doc(childDoc.id)
         .set({
           'childId': childDoc.id,
-          'linkCode': normalizedCode,
           'linkedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        });
+  }
+
+  Future<void> unlinkChild(String childId) async {
+    final parent = _auth.currentUser;
+
+    if (parent == null) {
+      throw Exception('Parent chưa đăng nhập');
+    }
+
+    final childRef = _firestore.collection('children').doc(childId);
+    final childDoc = await childRef.get();
+
+    if (!childDoc.exists) {
+      throw Exception('Không tìm thấy Child');
+    }
+
+    final currentParentId = (childDoc.data()?['parentId'] ?? '').toString();
+
+    if (currentParentId != parent.uid) {
+      throw Exception('Bạn không có quyền hủy liên kết Child này');
+    }
+
+    await childRef.update({
+      'parentId': '',
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    await _firestore
+        .collection('parents')
+        .doc(parent.uid)
+        .collection('children')
+        .doc(childId)
+        .delete();
   }
 
   Stream<List<Map<String, dynamic>>> getLinkedChildrenStream() {

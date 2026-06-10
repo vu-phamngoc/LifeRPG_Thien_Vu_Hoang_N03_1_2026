@@ -84,7 +84,7 @@ class ParentProfileScreen extends StatelessWidget {
     String title, {
     String? action,
     VoidCallback? onActionTap,
-    }) {
+  }) {
     return Padding(
       padding: const EdgeInsets.only(top: 22, bottom: 12),
       child: Row(
@@ -116,76 +116,66 @@ class ParentProfileScreen extends StatelessWidget {
   }
 
   void showAddChildDialog(BuildContext context) {
-  final childIdController = TextEditingController();
+    final linkCodeController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Add Child'),
-        content: TextField(
-          controller: childIdController,
-          decoration: const InputDecoration(
-            labelText: 'Child UID',
-            hintText: 'Nhập UID tài khoản Child',
-          ),
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('Hủy'),
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Add Child'),
+          content: TextField(
+            controller: linkCodeController,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'Mã liên kết',
+              hintText: 'Nhập mã liên kết của Child, ví dụ KQFPX5UF',
+            ),
           ),
 
-          FilledButton(
-            onPressed: () async {
-              final childId =
-                  childIdController.text.trim();
-
-              if (childId.isEmpty) {
-                return;
-              }
-
-              try {
-                await context
-                    .read<FamilyProvider>()
-                    .linkChild(childId);
-
-                if (!context.mounted) return;
-
+          actions: [
+            TextButton(
+              onPressed: () {
                 Navigator.pop(dialogContext);
+              },
+              child: const Text('Hủy'),
+            ),
 
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Liên kết Child thành công',
-                    ),
-                  ),
-                );
-              } catch (e) {
-                if (!context.mounted) return;
+            FilledButton(
+              onPressed: () async {
+                final linkCode = linkCodeController.text.trim();
 
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Lỗi: $e',
-                    ),
-                  ),
-                );
-              }
-            },
+                if (linkCode.isEmpty) {
+                  return;
+                }
 
-            child: const Text('Liên kết'),
-          ),
-        ],
-      );
-    },
-  );
-}
+                try {
+                  await context.read<FamilyProvider>().linkChildByCode(
+                    linkCode,
+                  );
+
+                  if (!context.mounted) return;
+
+                  Navigator.pop(dialogContext);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Liên kết Child thành công')),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+                }
+              },
+
+              child: const Text('Liên kết'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget infoRow(String label, String value) {
     return Container(
@@ -278,6 +268,7 @@ class ParentProfileScreen extends StatelessWidget {
     required String name,
     required String level,
     required double progress,
+    required VoidCallback onUnlink,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -329,20 +320,9 @@ class ParentProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xffefe7ff),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              level,
-              style: const TextStyle(
-                color: Color(0xff7048ff),
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+          IconButton(
+            onPressed: onUnlink,
+            icon: const Icon(Icons.link_off, color: Colors.redAccent),
           ),
         ],
       ),
@@ -355,258 +335,269 @@ class ParentProfileScreen extends StatelessWidget {
     final childProvider = context.watch<ChildProvider>();
     final familyProvider = context.watch<FamilyProvider>();
 
-   if (!familyProvider.hasChildren) {
-  Future.microtask(() {
-    if (context.mounted) {
-      context.read<FamilyProvider>().listenToLinkedChildren();
+    if (!familyProvider.hasChildren) {
+      Future.microtask(() {
+        if (context.mounted) {
+          context.read<FamilyProvider>().listenToLinkedChildren();
+        }
+      });
     }
-  });
-}
 
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-return FutureBuilder<Map<String, dynamic>?>(
-  key: ValueKey(currentUid),
-  future: UserService().getCurrentParentProfile(),
+    return FutureBuilder<Map<String, dynamic>?>(
+      key: ValueKey(currentUid),
+      future: UserService().getCurrentParentProfile(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-  return const Scaffold(
-    body: Center(
-      child: CircularProgressIndicator(),
-    ),
-  );
-}
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-if (snapshot.hasError) {
-  return Scaffold(
-    body: Center(
-      child: Text('Lỗi tải profile: ${snapshot.error}'),
-    ),
-  );
-}
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Lỗi tải profile: ${snapshot.error}')),
+          );
+        }
 
-if (snapshot.data == null) {
-  return const Scaffold(
-    body: Center(
-      child: Text('Không tìm thấy thông tin Parent Profile'),
-    ),
-  );
-}
+        if (snapshot.data == null) {
+          return const Scaffold(
+            body: Center(
+              child: Text('Không tìm thấy thông tin Parent Profile'),
+            ),
+          );
+        }
 
-final user = snapshot.data!;
+        final user = snapshot.data!;
 
-        final username =
-            user['username'] ?? 'User';
+        final username = user['username'] ?? 'User';
 
         final email =
-    user['email'] ?? FirebaseAuth.instance.currentUser?.email ?? '';
+            user['email'] ?? FirebaseAuth.instance.currentUser?.email ?? '';
 
-        final phone =
-    user['phone'] ?? '';
+        final phone = user['phone'] ?? '';
 
-        final avatar =
-    user['avatar'] as String?;
+        final avatar = user['avatar'] as String?;
 
-    return Scaffold(
-      backgroundColor: const Color(0xfffffaff),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Scaffold(
+          backgroundColor: const Color(0xfffffaff),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+              child: Column(
                 children: [
-                  topButton('←', () => Navigator.pop(context)),
-                  const Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Parent Profile',
-                        style: TextStyle(
-                          fontSize: 22,
-                          color: Color(0xff2d243b),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      topButton('←', () => Navigator.pop(context)),
+                      const Column(
+                        children: [
+                          Text(
+                            'Parent Profile',
+                            style: TextStyle(
+                              fontSize: 22,
+                              color: Color(0xff2d243b),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'Thông tin phụ huynh',
+                            style: TextStyle(
+                              color: Color(0xff8b7c99),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Thông tin phụ huynh',
-                        style: TextStyle(
-                          color: Color(0xff8b7c99),
-                          fontSize: 13,
+                      topButton('⚙️', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(26),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xff7048ff), Color(0xff9d72ff)],
+                      ),
+                      borderRadius: BorderRadius.circular(32),
+                    ),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 42,
+                          backgroundColor: Colors.white.withValues(alpha: 0.25),
+                          backgroundImage: avatar == null || avatar.isEmpty
+                              ? null
+                              : MemoryImage(base64Decode(avatar)),
+                          child: avatar == null || avatar.isEmpty
+                              ? const Text(
+                                  '👨‍👧',
+                                  style: TextStyle(fontSize: 50),
+                                )
+                              : null,
                         ),
+                        SizedBox(height: 14),
+                        Text(
+                          username,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Parent Account\nQuản lý nhiệm vụ, xác nhận và trao thưởng cho con',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white, height: 1.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      statCard(
+                        icon: '👦',
+                        value: '${familyProvider.children.length}',
+                        label: 'Children',
+                      ),
+                      const SizedBox(width: 12),
+                      statCard(
+                        icon: '📋',
+                        value: '${taskProvider.tasks.length}',
+                        label: 'Tasks',
+                      ),
+                      const SizedBox(width: 12),
+                      statCard(
+                        icon: '🎁',
+                        value: '${childProvider.totalReward}',
+                        label: 'Rewards',
                       ),
                     ],
                   ),
-                  topButton('⚙️', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  sectionTitle('Account Information', action: 'Edit'),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: const Color(0xfff0e7fb)),
+                    ),
+                    child: Column(
+                      children: [
+                        infoRow('Email', email),
+                        infoRow('Phone', phone),
+                        infoRow('Role', 'Parent'),
+                        infoRow('Joined', 'May 2026'),
+                      ],
+                    ),
+                  ),
+                  sectionTitle(
+                    'My Children',
+                    action: 'Add Child',
+                    onActionTap: () {
+                      showAddChildDialog(context);
+                    },
+                  ),
+
+                  ...familyProvider.children.map((child) {
+                    return childCard(
+                      icon: '🧒',
+                      name: child['username'] ?? 'Child',
+                      level: 'LV ${child['level'] ?? 1}',
+                      progress: ((child['exp'] ?? 0) / 100).clamp(0, 1),
+                      onUnlink: () async {
+                        await context.read<FamilyProvider>().unlinkChild(
+                          child['uid'],
+                        );
+
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Đã hủy liên kết Child'),
+                          ),
+                        );
+                      },
                     );
                   }),
+                  sectionTitle('Settings'),
+                  settingCard(
+                    icon: '🔔',
+                    title: 'Notifications',
+                    subtitle: 'Task approval alerts',
+                  ),
+                  settingCard(
+                    icon: '🌙',
+                    title: 'Dark Mode',
+                    subtitle: 'Change app appearance',
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      final updated = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditProfileScreen(
+                            username: username,
+                            phone: phone,
+                            role: 'parent',
+                            accentColorHex: 'purple',
+                          ),
+                        ),
+                      );
+
+                      if (updated == true && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Cập nhật profile thành công'),
+                          ),
+                        );
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(56),
+                      backgroundColor: const Color(0xff7048ff),
+                    ),
+                    child: const Text('Edit Profile'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () async {
+                      await AuthService().logout();
+
+                      if (!context.mounted) return;
+
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(54),
+                      foregroundColor: const Color(0xffd94343),
+                      backgroundColor: const Color(0xfffff0f0),
+                      side: const BorderSide(color: Color(0xffffd4d4)),
+                    ),
+                    child: const Text('Logout'),
+                  ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(26),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xff7048ff), Color(0xff9d72ff)],
-                  ),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-  radius: 42,
-  backgroundColor: Colors.white.withValues(alpha: 0.25),
-  backgroundImage: avatar == null || avatar.isEmpty
-      ? null
-      : MemoryImage(base64Decode(avatar)),
-  child: avatar == null || avatar.isEmpty
-      ? const Text('👨‍👧', style: TextStyle(fontSize: 50))
-      : null,
-),
-                    SizedBox(height: 14),
-                    Text(
-                      username,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Parent Account\nQuản lý nhiệm vụ, xác nhận và trao thưởng cho con',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 22),
-              Row(
-                children: [
-                  statCard(
-                    icon: '👦', 
-                    value: '${familyProvider.children.length}',
-                    label: 'Children',
-                  ),
-                  const SizedBox(width: 12),
-                  statCard(
-                    icon: '📋',
-                    value: '${taskProvider.tasks.length}',
-                    label: 'Tasks',
-                  ),
-                  const SizedBox(width: 12),
-                  statCard(
-                    icon: '🎁',
-                    value: '${childProvider.totalReward}',
-                    label: 'Rewards',
-                  ),
-                ],
-              ),
-              sectionTitle('Account Information', action: 'Edit'),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(color: const Color(0xfff0e7fb)),
-                ),
-                child: Column(
-                  children: [
-                    infoRow('Email', email),
-                    infoRow('Phone', phone),
-                    infoRow('Role', 'Parent'),
-                    infoRow('Joined', 'May 2026'),
-                  ],
-                ),
-              ),
-              sectionTitle(
-                'My Children', 
-                action: 'Add Child',
-                onActionTap: () {
-                  showAddChildDialog(context);
-                },
-              ),
-
-              ...familyProvider.children.map(
-                (child) {
-                  return childCard(
-                    icon: '🧒',
-                    name: child['username'] ?? 'Child',
-                    level: 'LV ${child['level'] ?? 1}',
-                    progress: ((child['exp'] ?? 0) / 100).clamp(0, 1),
-                  );
-                },
-              ),
-              sectionTitle('Settings'),
-              settingCard(
-                icon: '🔔',
-                title: 'Notifications',
-                subtitle: 'Task approval alerts',
-              ),
-              settingCard(
-                icon: '🌙',
-                title: 'Dark Mode',
-                subtitle: 'Change app appearance',
-              ),
-              FilledButton(
-                onPressed: () async {
-  final updated = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => EditProfileScreen(
-        username: username,
-        phone: phone,
-        role: 'parent',
-        accentColorHex: 'purple',
-      ),
-    ),
-  );
-
-  if (updated == true && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cập nhật profile thành công')),
+            ),
+          ),
+        );
+      },
     );
   }
-},
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  backgroundColor: const Color(0xff7048ff),
-                ),
-                child: const Text('Edit Profile'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () async {
-                  await AuthService().logout();
-
-                  if (!context.mounted) return;
-
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(54),
-                  foregroundColor: const Color(0xffd94343),
-                  backgroundColor: const Color(0xfffff0f0),
-                  side: const BorderSide(color: Color(0xffffd4d4)),
-                ),
-                child: const Text('Logout'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  },
-  );
-}
 }

@@ -40,6 +40,11 @@ class FamilyProvider extends ChangeNotifier {
     listenToLinkedChildren();
   }
 
+  Future<void> unlinkChild(String childId) async {
+    await _userService.unlinkChild(childId);
+    listenToLinkedChildren();
+  }
+
   @override
   void dispose() {
     _childrenSubscription?.cancel();

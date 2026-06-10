@@ -1,8 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
-import 'role_select_screen.dart';
+import '../parent/parent_main_navigation_screen.dart';
+import '../child/child_main_navigation_screen.dart';
+import '../../providers/task_provider.dart';
 import '../../services/user_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -21,6 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
 
+  String? _selectedRole;
   bool _isLoading = false;
 
   @override
@@ -45,9 +49,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
-       _showMessage('Vui lòng nhập đầy đủ thông tin');
-       return;
-      }
+      _showMessage('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    if (_selectedRole == null) {
+      _showMessage('Vui lòng chọn vai trò Parent hoặc Child');
+      return;
+    }
 
     if (password.length < 6) {
       _showMessage('Mật khẩu phải có ít nhất 6 ký tự');
@@ -62,21 +71,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.registerWithEmail(
-        email: email,
-        password: password,
-      );
+      await _authService.registerWithEmail(email: email, password: password);
 
-      await UserService().createUserProfile(
-        username: username,
-        phone: phone,
-      );
+      await UserService().createUserProfile(username: username, phone: phone);
+
+      await UserService().saveUserRoleIfNotExists(_selectedRole!);
+
+      if (_selectedRole == 'child') {
+        await UserService().ensureChildDocumentExists();
+      }
 
       if (!mounted) return;
 
+      context.read<TaskProvider>().listenToTasks();
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
+        MaterialPageRoute(
+          builder: (_) => _selectedRole == 'parent'
+              ? const ParentMainNavigationScreen()
+              : const ChildMainNavigationScreen(),
+        ),
       );
     } on FirebaseAuthException catch (e) {
       _showMessage(_getFirebaseErrorMessage(e.code));
@@ -107,9 +122,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _showMessage(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -179,6 +194,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    label: const Text('Parent'),
+                    selected: _selectedRole == 'parent',
+                    onSelected: _isLoading
+                        ? null
+                        : (_) {
+                            setState(() => _selectedRole = 'parent');
+                          },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ChoiceChip(
+                    label: const Text('Child'),
+                    selected: _selectedRole == 'child',
+                    onSelected: _isLoading
+                        ? null
+                        : (_) {
+                            setState(() => _selectedRole = 'child');
+                          },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             SizedBox(
