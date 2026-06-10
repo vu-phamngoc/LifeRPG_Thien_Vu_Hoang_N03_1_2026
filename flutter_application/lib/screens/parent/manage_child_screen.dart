@@ -7,10 +7,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/task_provider.dart';
+import '../../providers/family_provider.dart';
 import 'child_detail_profile_screen.dart';
 
-class ManageChildScreen extends StatelessWidget {
+class ManageChildScreen extends StatefulWidget {
   const ManageChildScreen({super.key});
+
+  @override
+  State<ManageChildScreen> createState() => _ManageChildScreenState();
+}
+
+class _ManageChildScreenState extends State<ManageChildScreen> {
+  final TextEditingController _codeController = TextEditingController();
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _childrenStream() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -75,7 +89,8 @@ class ManageChildScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _header(context),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
+                  _linkCodeCard(context),
                   _hero(children.length),
                   _stats(
                     totalExp: totalExp,
@@ -104,6 +119,62 @@ class ManageChildScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _linkCodeCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          TextField(
+            controller: _codeController,
+            textCapitalization: TextCapitalization.characters,
+            decoration: InputDecoration(
+              labelText: 'Nhập mã liên kết của con (VD: KQ123ABC)',
+              prefixIcon: const Icon(Icons.link),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () async {
+                try {
+                  await context.read<FamilyProvider>().linkChildByCode(
+                    _codeController.text,
+                  );
+
+                  _codeController.clear();
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Liên kết thành công')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                  }
+                }
+              },
+              child: const Text('Liên kết Child'),
+            ),
+          ),
+        ],
       ),
     );
   }
