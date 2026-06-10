@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/child_provider.dart';
-import '../../providers/activity_provider.dart';
 import 'child_reward_screen.dart';
+import 'child_task_screen.dart';
 import '../shared/achievement_screen.dart';
 import '../shared/activity_log_screen.dart';
 import '../shared/settings_screen.dart';
@@ -54,17 +54,10 @@ class ChildHomeScreen extends StatelessWidget {
             ),
           ),
 
-          FilledButton(
-            onPressed: () {
-              context.read<TaskProvider>().submitTask(task.id);
-
-              context.read<ActivityProvider>().addActivity(
-                childId: task.childId,
-                title: 'Task Submitted',
-                description: task.title,
-              );
-            },
-            child: const Text('Hoàn thành'),
+          Chip(
+            label: const Text('TODO'),
+            backgroundColor: color.withValues(alpha: 0.18),
+            labelStyle: TextStyle(color: color, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -206,6 +199,17 @@ class ChildHomeScreen extends StatelessWidget {
             const Text(
               'Nhiệm vụ hôm nay',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            ),
+
+            TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChildTaskScreen()),
+                );
+              },
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Xem tất cả nhiệm vụ'),
             ),
 
             const SizedBox(height: 20),
