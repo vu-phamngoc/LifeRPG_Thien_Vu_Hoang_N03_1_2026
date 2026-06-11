@@ -48,7 +48,18 @@ service cloud.firestore {
     }
 
     match /children/{childId} {
-      allow read, write: if isOwner(childId) || isParent();
+
+      allow read: if signedIn();
+
+      allow create: if isChild();
+
+      allow update: if signedIn() &&
+        (
+          request.auth.uid == childId ||
+          isParent()
+        );
+
+      allow delete: if false;
 
       match /rewards/{rewardId} {
         allow read: if isOwner(childId) || isParent();

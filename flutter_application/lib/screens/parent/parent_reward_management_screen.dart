@@ -157,43 +157,41 @@ class _ParentRewardManagementScreenState
     required String value,
     required String label,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xfff0e7fb)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.deepPurple.withValues(alpha: 0.08),
-              blurRadius: 22,
-              offset: const Offset(0, 8),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xfff0e7fb)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              color: Color(0xff2d243b),
+              fontWeight: FontWeight.bold,
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                color: Color(0xff2d243b),
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xff8b7c99),
+              fontWeight: FontWeight.bold,
             ),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xff8b7c99),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -648,24 +646,30 @@ class _ParentRewardManagementScreenState
               const SizedBox(height: 20),
               Row(
                 children: [
-                  statCard(
-                    icon: '🎁',
-                    value: '${rewards.length}',
-                    label: 'Rewards',
+                  Expanded(
+                    child: statCard(
+                      icon: '🎁',
+                      value: '${rewards.length}',
+                      label: 'Rewards',
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  statCard(
-                    icon: '✅',
-                    value:
-                        '${rewards.where((reward) => reward.redeemed).length}',
-                    label: 'Redeemed',
+                  Expanded(
+                    child: statCard(
+                      icon: '✅',
+                      value:
+                          '${rewards.where((reward) => reward.redeemed).length}',
+                      label: 'Redeemed',
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  statCard(
-                    icon: '🟢',
-                    value:
-                        '${rewards.where((reward) => !reward.redeemed).length}',
-                    label: 'Available',
+                  Expanded(
+                    child: statCard(
+                      icon: '🟢',
+                      value:
+                          '${rewards.where((reward) => !reward.redeemed).length}',
+                      label: 'Available',
+                    ),
                   ),
                 ],
               ),

@@ -450,9 +450,9 @@ class _ManageChildScreenState extends State<ManageChildScreen> {
               const SizedBox(height: 15),
               Row(
                 children: [
-                  _childData('$exp', 'EXP'),
-                  _childData('$badges', 'Badges'),
-                  _childData('$coins', 'Coins'),
+                  Expanded(child: _childData('$exp', 'EXP')),
+                  Expanded(child: _childData('$badges', 'Badges')),
+                  Expanded(child: _childData('$coins', 'Coins')),
                 ],
               ),
               const SizedBox(height: 15),
@@ -492,23 +492,21 @@ class _ManageChildScreenState extends State<ManageChildScreen> {
   }
 
   Widget _childData(String value, String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xff2d243b),
-              fontWeight: FontWeight.bold,
-            ),
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: Color(0xff2d243b),
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(color: Color(0xff8b7c99), fontSize: 12),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xff8b7c99), fontSize: 12),
+        ),
+      ],
     );
   }
 

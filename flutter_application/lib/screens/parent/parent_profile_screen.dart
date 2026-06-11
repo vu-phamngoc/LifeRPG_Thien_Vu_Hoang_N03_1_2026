@@ -39,43 +39,41 @@ class ParentProfileScreen extends StatelessWidget {
     required String value,
     required String label,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xfff0e7fb)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.deepPurple.withValues(alpha: 0.08),
-              blurRadius: 22,
-              offset: const Offset(0, 8),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xfff0e7fb)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xff2d243b),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Color(0xff2d243b),
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xff8b7c99),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xff8b7c99),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -335,15 +333,15 @@ class ParentProfileScreen extends StatelessWidget {
     final childProvider = context.watch<ChildProvider>();
     final familyProvider = context.watch<FamilyProvider>();
 
-    if (!familyProvider.hasChildren) {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    if (currentUid.isNotEmpty && !familyProvider.hasChildren) {
       Future.microtask(() {
         if (context.mounted) {
           context.read<FamilyProvider>().listenToLinkedChildren();
         }
       });
     }
-
-    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return FutureBuilder<Map<String, dynamic>?>(
       key: ValueKey(currentUid),
@@ -467,22 +465,28 @@ class ParentProfileScreen extends StatelessWidget {
                   const SizedBox(height: 22),
                   Row(
                     children: [
-                      statCard(
-                        icon: '👦',
-                        value: '${familyProvider.children.length}',
-                        label: 'Children',
+                      Expanded(
+                        child: statCard(
+                          icon: '👦',
+                          value: '${familyProvider.children.length}',
+                          label: 'Children',
+                        ),
                       ),
                       const SizedBox(width: 12),
-                      statCard(
-                        icon: '📋',
-                        value: '${taskProvider.tasks.length}',
-                        label: 'Tasks',
+                      Expanded(
+                        child: statCard(
+                          icon: '📋',
+                          value: '${taskProvider.tasks.length}',
+                          label: 'Tasks',
+                        ),
                       ),
                       const SizedBox(width: 12),
-                      statCard(
-                        icon: '🎁',
-                        value: '${childProvider.totalReward}',
-                        label: 'Rewards',
+                      Expanded(
+                        child: statCard(
+                          icon: '🎁',
+                          value: '${childProvider.totalReward}',
+                          label: 'Rewards',
+                        ),
                       ),
                     ],
                   ),
@@ -574,15 +578,15 @@ class ParentProfileScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: () async {
-                      await AuthService().logout();
-
-                      if (!context.mounted) return;
+                      context.read<FamilyProvider>().clear();
 
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(builder: (_) => const LoginScreen()),
                         (route) => false,
                       );
+
+                      await AuthService().logout();
                     },
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(54),
