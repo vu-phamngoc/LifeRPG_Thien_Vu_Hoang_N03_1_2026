@@ -1,289 +1,460 @@
-# 🎮 Life RPG – Ứng dụng quản lý nhiệm vụ trẻ em theo cơ chế Gamification
+# 🎮 LIFE RPG
 
-## 📌 Tổng quan dự án
-
-Life RPG là ứng dụng quản lý nhiệm vụ dành cho trẻ em, được phát triển theo định hướng gamification nhằm tăng động lực học tập và hoàn thành công việc hằng ngày thông qua các cơ chế giống trò chơi như EXP, Level, Achievement và Reward.
-
-Ứng dụng cho phép phụ huynh giao nhiệm vụ, theo dõi tiến độ và xác nhận kết quả hoàn thành của trẻ em. Sau khi nhiệm vụ được xác nhận, hệ thống sẽ tự động cộng điểm kinh nghiệm, cập nhật level và mở khóa các phần thưởng hoặc thành tựu tương ứng.
-
-Dự án được xây dựng bằng Flutter với mục tiêu hỗ trợ đa nền tảng bao gồm Android, iOS và Web.
+## Hệ thống quản lý nhiệm vụ trẻ em ứng dụng Gamification
 
 ---
 
-# 🎯 Mục tiêu dự án
 
-Dự án được thực hiện với các mục tiêu chính sau:
+# 1. Giới thiệu dự án
 
-- Xây dựng hệ thống quản lý nhiệm vụ dành riêng cho mô hình phụ huynh – trẻ em.
-- Áp dụng cơ chế gamification để tăng tính tương tác và động lực cho trẻ em.
-- Thiết kế quy trình xác nhận nhiệm vụ thông qua phụ huynh nhằm đảm bảo tính minh bạch.
-- Phát triển ứng dụng Flutter theo kiến trúc rõ ràng, dễ mở rộng và dễ bảo trì.
-- Thực hành quy trình phát triển ứng dụng thực tế với Flutter và Firebase.
+Life RPG là một ứng dụng hỗ trợ phụ huynh quản lý nhiệm vụ, thói quen và quá trình phát triển của trẻ em thông qua cơ chế Gamification (trò chơi hóa).
 
----
+Thay vì yêu cầu trẻ thực hiện các công việc hàng ngày theo phương pháp truyền thống, hệ thống chuyển đổi các nhiệm vụ thành những thử thách mang tính trò chơi. Khi hoàn thành nhiệm vụ, trẻ sẽ nhận được điểm kinh nghiệm (EXP), tăng cấp độ (Level), mở khóa thành tựu (Achievement) và nhận các phần thưởng (Reward) do phụ huynh thiết lập.
 
-# 🧩 Bài toán thực tế
-
-Trong quá trình quản lý trẻ em, các công việc như học tập, làm bài tập hoặc hoàn thành việc nhà thường thiếu tính tương tác và động lực duy trì lâu dài.
-
-Nhiều trẻ em có xu hướng xem các nhiệm vụ hằng ngày là bắt buộc và nhàm chán, dẫn đến việc khó hình thành tính tự giác.
-
-Life RPG được xây dựng nhằm giải quyết vấn đề này bằng cách chuyển đổi các nhiệm vụ thường ngày thành trải nghiệm mang tính trò chơi hóa, nơi trẻ em có thể:
-
-- Nhận EXP khi hoàn thành nhiệm vụ
-- Tăng cấp độ (Level)
-- Mở khóa Achievement
-- Nhận phần thưởng
-- Theo dõi tiến trình phát triển của bản thân
-
-Đồng thời phụ huynh vẫn giữ vai trò quản lý và xác nhận kết quả thực hiện.
+Dự án được xây dựng nhằm tạo động lực cho trẻ em hình thành thói quen tích cực, nâng cao tính tự giác và giúp phụ huynh theo dõi quá trình phát triển của con một cách trực quan, hiệu quả.
 
 ---
 
-# 👨‍👩‍👧 Đối tượng sử dụng
+# 2. Bài toán thực tế
 
-## 👨‍👩‍👧‍👦 Phụ huynh
+Trong thực tế, nhiều phụ huynh gặp khó khăn trong việc:
 
-Phụ huynh là người quản lý chính của hệ thống với các chức năng:
+* Quản lý công việc hàng ngày của con.
+* Theo dõi quá trình hoàn thành nhiệm vụ.
+* Tạo động lực cho trẻ học tập và sinh hoạt tích cực.
+* Hình thành thói quen tốt cho trẻ trong thời gian dài.
+* Kiểm soát thời gian sử dụng thiết bị điện tử.
 
-- Tạo nhiệm vụ
-- Giao nhiệm vụ cho trẻ em
-- Theo dõi tiến độ
-- Xác nhận hoặc từ chối nhiệm vụ
-- Quản lý phần thưởng
-- Theo dõi lịch sử hoạt động
+Trong khi đó, trẻ em thường có xu hướng thích các trò chơi điện tử vì có hệ thống điểm thưởng, cấp độ và thành tích.
 
-## 🧒 Trẻ em
-
-Trẻ em là người thực hiện nhiệm vụ với các chức năng:
-
-- Xem danh sách nhiệm vụ
-- Báo cáo hoàn thành nhiệm vụ
-- Theo dõi EXP và Level
-- Xem Achievement
-- Xem phần thưởng và lịch sử hoạt động
+Life RPG tận dụng chính cơ chế đó để biến các hoạt động đời thường thành một trò chơi phát triển bản thân.
 
 ---
 
-# 🚀 Định hướng phát triển dự án
+# 3. Mục tiêu dự án
 
-Dự án được phát triển theo định hướng:
+Mục tiêu chính của hệ thống:
 
-```txt
-MVP trước → Hoàn thiện logic → Firebase → UI/UX nâng cao
-```
-
-Trong giai đoạn đầu, dự án tập trung vào việc hoàn thiện luồng hoạt động chính và kiến trúc hệ thống trước khi triển khai các chức năng nâng cao.
-
----
-
-# 🔄 Luồng hoạt động chính
-
-## 👨‍👩‍👧 Luồng phụ huynh
-
-```txt
-Đăng nhập
-→ Quản lý danh sách con
-→ Tạo nhiệm vụ
-→ Giao nhiệm vụ
-→ Xem nhiệm vụ đã gửi hoàn thành
-→ Approve / Reject
-→ Theo dõi EXP, Reward và Activity Log
-```
-
-## 🧒 Luồng trẻ em
-
-```txt
-Đăng nhập
-→ Xem nhiệm vụ được giao
-→ Báo cáo hoàn thành nhiệm vụ
-→ Chờ phụ huynh xác nhận
-→ Nhận EXP và Reward
-→ Theo dõi Level và Achievement
-```
+* Tăng tính tự giác cho trẻ em.
+* Khuyến khích hoàn thành nhiệm vụ hàng ngày.
+* Hình thành các thói quen tốt.
+* Hỗ trợ phụ huynh quản lý con hiệu quả hơn.
+* Xây dựng môi trường giáo dục tích cực.
+* Áp dụng mô hình Gamification trong quản lý gia đình.
 
 ---
 
-# 📋 Trạng thái nhiệm vụ
+# 4. Đối tượng sử dụng
 
-Mỗi nhiệm vụ trong hệ thống sẽ trải qua các trạng thái sau:
+## Phụ huynh
 
-| Trạng thái | Ý nghĩa |
-|---|---|
-| `pending` | Nhiệm vụ vừa được tạo |
-| `submitted` | Trẻ em đã báo cáo hoàn thành |
-| `approved` | Phụ huynh xác nhận hoàn thành |
-| `rejected` | Phụ huynh từ chối xác nhận |
+* Tạo tài khoản.
+* Quản lý thông tin trẻ em.
+* Giao nhiệm vụ.
+* Thiết lập phần thưởng.
+* Theo dõi tiến độ hoàn thành.
+* Đánh giá kết quả thực hiện.
 
-Đây là luồng xử lý trung tâm của toàn bộ hệ thống.
+## Trẻ em
+
+* Thực hiện nhiệm vụ.
+* Nhận điểm thưởng.
+* Tăng cấp độ.
+* Mở khóa thành tựu.
+* Theo dõi quá trình phát triển cá nhân.
 
 ---
 
-# 🏗️ Kiến trúc hệ thống
+# 5. Chức năng hệ thống
 
-Dự án được tổ chức theo hướng phân tách rõ ràng giữa giao diện, dữ liệu và business logic nhằm đảm bảo khả năng mở rộng lâu dài.
+## 5.1 Xác thực người dùng
 
-## 📁 Cấu trúc thư mục chính
+### Đăng ký
 
-```txt
+* Nhập Email.
+* Nhập mật khẩu.
+* Xác thực tài khoản.
+
+### Đăng nhập
+
+* Đăng nhập bằng Email và Password.
+* Phân quyền theo vai trò.
+
+### Đăng xuất
+
+* Hủy phiên làm việc.
+* Quay về màn hình đăng nhập.
+
+---
+
+## 5.2 Quản lý trẻ em
+
+Phụ huynh có thể:
+
+* Thêm trẻ em mới.
+* Chỉnh sửa thông tin.
+* Xóa hồ sơ trẻ em.
+* Theo dõi Level và EXP.
+
+Thông tin lưu trữ:
+
+* Họ tên
+* Tuổi
+* Ảnh đại diện
+* Level
+* Tổng EXP
+* Ngày tham gia
+
+---
+
+## 5.3 Quản lý nhiệm vụ
+
+### Tạo nhiệm vụ
+
+Thông tin nhiệm vụ:
+
+* Tên nhiệm vụ
+* Mô tả
+* Độ khó
+* EXP nhận được
+* Hạn hoàn thành
+
+### Chỉnh sửa nhiệm vụ
+
+* Cập nhật nội dung.
+* Điều chỉnh điểm thưởng.
+
+### Xóa nhiệm vụ
+
+* Xóa khỏi danh sách.
+
+---
+
+## 5.4 Giao nhiệm vụ
+
+Phụ huynh lựa chọn:
+
+* Trẻ em nhận nhiệm vụ.
+* Ngày bắt đầu.
+* Ngày kết thúc.
+
+Sau khi giao, nhiệm vụ sẽ xuất hiện trên tài khoản của trẻ.
+
+---
+
+## 5.5 Hoàn thành nhiệm vụ
+
+Trẻ em:
+
+* Chọn nhiệm vụ.
+* Đánh dấu hoàn thành.
+* Gửi yêu cầu xác nhận.
+
+Trạng thái:
+
+* Pending
+* Submitted
+* Approved
+* Rejected
+
+---
+
+## 5.6 Xác nhận nhiệm vụ
+
+Phụ huynh:
+
+* Xem yêu cầu hoàn thành.
+* Đồng ý hoặc từ chối.
+
+Nếu đồng ý:
+
+* Cộng EXP.
+* Cập nhật Level.
+* Ghi nhận lịch sử.
+
+---
+
+## 5.7 Hệ thống Level
+
+Mỗi trẻ có:
+
+* Level hiện tại.
+* Tổng EXP.
+* EXP cần để lên cấp.
+
+Ví dụ:
+
+Level 1 → 100 EXP
+
+Level 2 → 250 EXP
+
+Level 3 → 500 EXP
+
+Level 4 → 1000 EXP
+
+...
+
+---
+
+## 5.8 Hệ thống Achievement
+
+Các thành tựu tiêu biểu:
+
+* Hoàn thành nhiệm vụ đầu tiên.
+* Chuỗi 7 ngày liên tiếp.
+* Đạt Level 5.
+* Hoàn thành 100 nhiệm vụ.
+* Đạt 1000 EXP.
+
+---
+
+## 5.9 Hệ thống Reward
+
+Phụ huynh tạo:
+
+* Kẹo
+* Đồ chơi
+* Chuyến đi chơi
+* Thời gian xem TV
+* Tiền thưởng
+
+Trẻ sử dụng điểm tích lũy để đổi phần thưởng.
+
+---
+
+## 5.10 Activity Log
+
+Ghi nhận toàn bộ hoạt động:
+
+* Đăng nhập.
+* Nhận nhiệm vụ.
+* Hoàn thành nhiệm vụ.
+* Nhận EXP.
+* Lên Level.
+* Đổi thưởng.
+
+---
+
+# 6. Mô hình dữ liệu
+
+## User
+
+* userId
+* email
+* password
+* role
+
+## Parent
+
+* parentId
+* fullName
+* avatar
+
+## Child
+
+* childId
+* fullName
+* age
+* level
+* totalExp
+
+## Task
+
+* taskId
+* title
+* description
+* expReward
+* deadline
+* status
+
+## Reward
+
+* rewardId
+* rewardName
+* pointRequired
+
+## Achievement
+
+* achievementId
+* title
+* description
+
+## ActivityLog
+
+* logId
+* action
+* createdAt
+
+---
+
+# 7. Kiến trúc hệ thống
+
+Hệ thống được xây dựng theo mô hình nhiều tầng:
+
+Presentation Layer
+
+↓
+
+Provider State Management
+
+↓
+
+Business Logic Layer
+
+↓
+
+Firebase Service Layer
+
+↓
+
+Cloud Firestore Database
+
+Kiến trúc giúp:
+
+* Dễ bảo trì.
+* Dễ mở rộng.
+* Tăng khả năng tái sử dụng code.
+* Phân tách trách nhiệm rõ ràng.
+
+---
+
+# 8. Công nghệ sử dụng
+
+## Frontend
+
+* Flutter
+* Dart
+* Material Design
+
+## Backend Services
+
+* Firebase Authentication
+* Cloud Firestore
+* Firebase Cloud Functions
+
+## State Management
+
+* Provider
+
+## Development Tools
+
+* Android Studio
+* VS Code
+* Git
+* GitHub
+
+---
+
+# 9. Cấu trúc thư mục
+
+```text
 lib/
-├── main.dart
-├── app.dart
 ├── core/
+│   ├── constants/
+│   ├── themes/
+│   └── utils/
+│
 ├── models/
-├── providers/
+│   ├── user.dart
+│   ├── child.dart
+│   ├── task.dart
+│   ├── reward.dart
+│   └── achievement.dart
+│
 ├── services/
+│   ├── auth_service.dart
+│   ├── firestore_service.dart
+│   └── notification_service.dart
+│
+├── providers/
+│   ├── auth_provider.dart
+│   ├── child_provider.dart
+│   └── task_provider.dart
+│
 ├── screens/
 │   ├── auth/
 │   ├── parent/
 │   ├── child/
 │   └── shared/
-└── routes/
+│
+├── widgets/
+│
+├── routes/
+│
+├── app.dart
+│
+└── main.dart
 ```
 
 ---
 
-# ⚙️ Thành phần chính của hệ thống
+# 10. Hướng dẫn cài đặt
 
-## 📦 Models
+## Clone dự án
 
-Chứa cấu trúc dữ liệu của hệ thống:
-
-- ParentModel
-- ChildModel
-- TaskModel
-- AchievementModel
-- RewardModel
-- ActivityModel
-
-## 🔄 Providers
-
-Quản lý state và business logic của ứng dụng.
-
-## 🔌 Services
-
-Làm việc với Firebase Authentication và Firestore.
-
-## 🖥️ Screens
-
-Quản lý giao diện người dùng theo từng nhóm chức năng.
-
----
-
-# 🛠️ Công nghệ sử dụng
-
-| Công nghệ | Vai trò |
-|---|---|
-| Flutter | Xây dựng giao diện đa nền tảng |
-| Dart | Ngôn ngữ lập trình chính |
-| Provider | Quản lý state |
-| Firebase Authentication | Xác thực người dùng |
-| Cloud Firestore | Lưu trữ dữ liệu realtime |
-
----
-
-# 📅 Kế hoạch triển khai
-
-## Giai đoạn 1 – Hoàn thiện cấu trúc project
-
-- Refactor thư mục
-- Chuẩn hóa kiến trúc
-- Hoàn thiện routing
-- Chạy ổn định trên Web
-
-## Giai đoạn 2 – Hoàn thiện chức năng cơ bản
-
-- Login / Register
-- Parent Dashboard
-- Child Home
-- Task CRUD
-- Submit Task
-- Approve / Reject Task
-
-## Giai đoạn 3 – Gamification System
-
-- EXP System
-- Level System
-- Achievement
-- Reward
-- Activity Log
-
-## Giai đoạn 4 – Firebase Integration
-
-- Firebase Authentication
-- Cloud Firestore
-- Realtime Update
-
-## Giai đoạn 5 – UI/UX & Animation
-
-- Thiết kế giao diện hoàn chỉnh
-- Animation Level Up
-- Achievement Badge
-- Responsive UI
-- Dark Mode
-
-## Giai đoạn 6 – Testing & Deployment
-
-- Kiểm thử toàn bộ hệ thống
-- Build Android APK
-- Build iOS
-- Demo và hoàn thiện báo cáo
-
----
-
-# ⭐ Chức năng trọng tâm của dự án
-
-Các chức năng cốt lõi bao gồm:
-
-- Quản lý nhiệm vụ giữa phụ huynh và trẻ em
-- Xác nhận hoàn thành nhiệm vụ
-- Hệ thống EXP và Level
-- Achievement và Reward
-- Activity Tracking
-- Gamification UI
-
----
-
-# 🔮 Định hướng mở rộng trong tương lai
-
-Trong các phiên bản tiếp theo, dự án có thể mở rộng thêm:
-
-- Notification realtime
-- Daily Quest
-- Weekly Challenge
-- Leaderboard
-- Multiplayer Family System
-- Cloud Sync
-- AI Suggestion for Tasks
-- Gamification Analytics
-
----
-
-# 🎯 Mục tiêu cuối cùng
-
-Hoàn thiện ứng dụng Life RPG như một nền tảng hỗ trợ phụ huynh quản lý trẻ em theo hướng tích cực, hiện đại và mang tính tương tác cao thông qua gamification.
-
-Ứng dụng hướng đến trải nghiệm vừa mang tính giáo dục vừa tạo động lực phát triển thói quen tốt cho trẻ em trong môi trường gia đình.
-
----
-
-# 📱 Nền tảng hỗ trợ
-
-- Android
-- iOS
-- Web
-
----
-
-# 👨‍💻 Trạng thái dự án
-
-```txt
-Đang trong quá trình phát triển và hoàn thiện kiến trúc hệ thống.
+```bash
+git clone https://github.com/your-repository/LifeRPG.git
 ```
-# Thành viên 
-- Phạm Ngọc Vũ - 23010192
-- Nguyễn Hoàng Thiên - 23010139
-_...
 
-# Sơ đồ Kiến trúc tổng thể
-![alt text](SODO.png)
+## Cài package
+
+```bash
+flutter pub get
+```
+
+## Cấu hình Firebase
+
+Tải và thêm:
+
+* google-services.json
+* GoogleService-Info.plist
+
+Khởi tạo:
+
+```bash
+flutterfire configure
+```
+
+## Chạy ứng dụng
+
+```bash
+flutter run
+```
+
+## Chạy trên Web
+
+```bash
+flutter run -d chrome
+```
+
+---
+
+# 11. Kết quả đạt được
+
+* Xây dựng hệ thống quản lý nhiệm vụ trẻ em hoàn chỉnh.
+* Áp dụng thành công mô hình Gamification.
+* Quản lý EXP, Level và Achievement.
+* Đồng bộ dữ liệu thời gian thực với Firebase.
+* Giao diện thân thiện với người dùng.
+
+---
+
+# 12. Hướng phát triển tương lai
+
+* Thông báo Push Notification.
+* AI gợi ý nhiệm vụ.
+* Bảng xếp hạng gia đình.
+* Nhiệm vụ theo tuần/tháng.
+* Đồng bộ đa thiết bị.
+* Hỗ trợ nhiều phụ huynh trên cùng một tài khoản trẻ em.
+
+---
+
+# 13. Thành viên nhóm
+
+Nhóm N03
+
+* Phạm Ngọc Vũ
+* Nguyễn Hoàng Thiên
+
+
