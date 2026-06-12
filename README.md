@@ -1,14 +1,19 @@
 # 🎮 LIFE RPG
 
 ## Hệ thống quản lý nhiệm vụ trẻ em ứng dụng Gamification
+# Thành viên nhóm
+
+Phạm Ngọc Vũ - 23010192
+
+Nguyễn Hoàng Thiên - 23010139
 
 ---
 # 📚 Mục lục
 
-* [ Giới thiệu chung dự án](#1-giới-thiệu-dự-án)
-* [ Bài toán thực tế](#2-bài-toán-thực-tế)
-* [ Mục tiêu dự án](#3-mục-tiêu-dự-án)
-* [ Đối tượng sử dụng](#4-đối-tượng-sử-dụng)
+* [1. Giới thiệu chung dự án](#1-giới-thiệu-dự-án)
+* [2. Bài toán thực tế](#2-bài-toán-thực-tế)
+* [3. Mục tiêu dự án](#3-mục-tiêu-dự-án)
+* [4. Đối tượng sử dụng](#4-đối-tượng-sử-dụng)
 
   * [4.1 Phụ huynh](#phụ-huynh)
   * [4.2 Trẻ em](#trẻ-em)
@@ -60,10 +65,7 @@
 * [11. Kết quả đạt được](#11-kết-quả-đạt-được)
 * [12. Hướng phát triển tương lai](#12-hướng-phát-triển-tương-lai)
 
-# Thành viên nhóm
 
-* Phạm Ngọc Vũ - 23010192
-* Nguyễn Hoàng Thiên - 23010139
 
 # 1. Giới thiệu dự án
 
