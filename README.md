@@ -342,6 +342,9 @@ Ghi nhận toàn bộ hoạt động:
 * action
 * createdAt
 
+## Sơ đồ Class Diagram
+![class diagram](<class diagram.png>)
+
 ---
 
 # 7. Kiến trúc hệ thống
