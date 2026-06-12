@@ -3,6 +3,63 @@
 ## Hệ thống quản lý nhiệm vụ trẻ em ứng dụng Gamification
 
 ---
+# 📚 Mục lục
+
+* [ Giới thiệu chung dự án](#1-giới-thiệu-dự-án)
+* [ Bài toán thực tế](#2-bài-toán-thực-tế)
+* [ Mục tiêu dự án](#3-mục-tiêu-dự-án)
+* [ Đối tượng sử dụng](#4-đối-tượng-sử-dụng)
+
+  * [4.1 Phụ huynh](#phụ-huynh)
+  * [4.2 Trẻ em](#trẻ-em)
+* [5. Chức năng hệ thống](#5-chức-năng-hệ-thống)
+
+  * [5.1 Xác thực người dùng](#51-xác-thực-người-dùng)
+
+    * [Đăng ký](#đăng-ký)
+    * [Đăng nhập](#đăng-nhập)
+    * [Đăng xuất](#đăng-xuất)
+  * [5.2 Quản lý trẻ em](#52-quản-lý-trẻ-em)
+  * [5.3 Quản lý nhiệm vụ](#53-quản-lý-nhiệm-vụ)
+
+    * [Tạo nhiệm vụ](#tạo-nhiệm-vụ)
+    * [Chỉnh sửa nhiệm vụ](#chỉnh-sửa-nhiệm-vụ)
+    * [Xóa nhiệm vụ](#xóa-nhiệm-vụ)
+  * [5.4 Giao nhiệm vụ](#54-giao-nhiệm-vụ)
+  * [5.5 Hoàn thành nhiệm vụ](#55-hoàn-thành-nhiệm-vụ)
+  * [5.6 Xác nhận nhiệm vụ](#56-xác-nhận-nhiệm-vụ)
+  * [5.7 Hệ thống Level](#57-hệ-thống-level)
+  * [5.8 Hệ thống Achievement](#58-hệ-thống-achievement)
+  * [5.9 Hệ thống Reward](#59-hệ-thống-reward)
+  * [5.10 Activity Log](#510-activity-log)
+* [6. Mô hình dữ liệu](#6-mô-hình-dữ-liệu)
+
+  * [User](#user)
+  * [Parent](#parent)
+  * [Child](#child)
+  * [Task](#task)
+  * [Reward](#reward)
+  * [Achievement](#achievement)
+  * [ActivityLog](#activitylog)
+* [7. Kiến trúc hệ thống](#7-kiến-trúc-hệ-thống)
+* [8. Công nghệ sử dụng](#8-công-nghệ-sử-dụng)
+
+  * [Frontend](#frontend)
+  * [Backend Services](#backend-services)
+  * [State Management](#state-management)
+  * [Development Tools](#development-tools)
+* [9. Cấu trúc thư mục](#9-cấu-trúc-thư-mục)
+* [10. Hướng dẫn cài đặt](#10-hướng-dẫn-cài-đặt)
+
+  * [Clone dự án](#clone-dự-án)
+  * [Cài package](#cài-package)
+  * [Cấu hình Firebase](#cấu-hình-firebase)
+  * [Chạy ứng dụng](#chạy-ứng-dụng)
+  * [Chạy trên Web](#chạy-trên-web)
+* [11. Kết quả đạt được](#11-kết-quả-đạt-được)
+* [12. Hướng phát triển tương lai](#12-hướng-phát-triển-tương-lai)
+* [13. Thành viên nhóm](#13-thành-viên-nhóm)
+
 
 
 # 1. Giới thiệu dự án
@@ -452,9 +509,7 @@ flutter run -d chrome
 
 # 13. Thành viên nhóm
 
-Nhóm N03
-
-* Phạm Ngọc Vũ
-* Nguyễn Hoàng Thiên
+* Phạm Ngọc Vũ - 23010192
+* Nguyễn Hoàng Thiên - 23010139
 
 
