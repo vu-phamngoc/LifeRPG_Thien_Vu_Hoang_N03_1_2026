@@ -346,32 +346,7 @@ Ghi nhận toàn bộ hoạt động:
 
 # 7. Kiến trúc hệ thống
 
-Hệ thống được xây dựng theo mô hình nhiều tầng:
-
-Presentation Layer
-
-↓
-
-Provider State Management
-
-↓
-
-Business Logic Layer
-
-↓
-
-Firebase Service Layer
-
-↓
-
-Cloud Firestore Database
-
-Kiến trúc giúp:
-
-* Dễ bảo trì.
-* Dễ mở rộng.
-* Tăng khả năng tái sử dụng code.
-* Phân tách trách nhiệm rõ ràng.
+![sdkt](sodokt.png)
 
 ---
 
