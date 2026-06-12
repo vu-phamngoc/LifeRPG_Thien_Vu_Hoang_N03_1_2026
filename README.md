@@ -41,7 +41,8 @@
   * [Reward](#reward)
   * [Achievement](#achievement)
   * [ActivityLog](#activitylog)
-* [7. Kiến trúc hệ thống](#7-kiến-trúc-hệ-thống)
+  * [Sơ đồ Class Diagram](#sơ-đồ-class-diagram)
+* [7. Sơ Đồ Kiến trúc hệ thống](#7-kiến-trúc-hệ-thống)
 * [8. Công nghệ sử dụng](#8-công-nghệ-sử-dụng)
 
   * [Frontend](#frontend)
@@ -58,9 +59,11 @@
   * [Chạy trên Web](#chạy-trên-web)
 * [11. Kết quả đạt được](#11-kết-quả-đạt-được)
 * [12. Hướng phát triển tương lai](#12-hướng-phát-triển-tương-lai)
-* [13. Thành viên nhóm](#13-thành-viên-nhóm)
 
+# Thành viên nhóm
 
+* Phạm Ngọc Vũ - 23010192
+* Nguyễn Hoàng Thiên - 23010139
 
 # 1. Giới thiệu dự án
 
