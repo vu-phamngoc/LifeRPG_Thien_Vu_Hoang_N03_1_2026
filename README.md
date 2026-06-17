@@ -467,8 +467,11 @@ flutter run
 ## Chạy trên Web
 
 ```bash
-flutter run -d chrome
+Parent chạy
+flutter run -d web-server --web-port 8081
 ```
+children
+flutter run -d web-server --web-port 8082
 
 ---
 
@@ -498,6 +501,6 @@ flutter run -d chrome
 * Phạm Ngọc Vũ - 23010192
 * Nguyễn Hoàng Thiên - 23010139
 
-# Demo 
+# video-demo
 
 https://youtu.be/3fPMaNJPhB8?si=9GLgD5DflCzigOly
