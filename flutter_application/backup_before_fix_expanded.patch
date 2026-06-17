@@ -1,0 +1,255 @@
+diff --git a/flutter_application/firestore.rules b/flutter_application/firestore.rules
+index 6e91f9c..5db3a62 100644
+--- a/flutter_application/firestore.rules
++++ b/flutter_application/firestore.rules
+@@ -48,7 +48,18 @@ service cloud.firestore {
+     }
+ 
+     match /children/{childId} {
+-      allow read, write: if isOwner(childId) || isParent();
++
++      allow read: if signedIn();
++
++      allow create: if isChild();
++
++      allow update: if signedIn() &&
++        (
++          request.auth.uid == childId ||
++          isParent()
++        );
++
++      allow delete: if false;
+ 
+       match /rewards/{rewardId} {
+         allow read: if isOwner(childId) || isParent();
+diff --git a/flutter_application/lib/providers/family_provider.dart b/flutter_application/lib/providers/family_provider.dart
+index ecde9bb..d1d4e2e 100644
+--- a/flutter_application/lib/providers/family_provider.dart
++++ b/flutter_application/lib/providers/family_provider.dart
+@@ -1,6 +1,7 @@
+ import 'dart:async';
+ 
+ import 'package:flutter/material.dart';
++import 'package:firebase_auth/firebase_auth.dart';
+ 
+ import '../services/user_service.dart';
+ 
+@@ -17,17 +18,32 @@ class FamilyProvider extends ChangeNotifier {
+   void listenToLinkedChildren() {
+     _childrenSubscription?.cancel();
+ 
+-    _childrenSubscription = _userService.getLinkedChildrenStream().listen(
+-      (children) {
+-        _children = children;
+-        notifyListeners();
+-      },
+-      onError: (error) {
+-        debugPrint('FamilyProvider listen error: $error');
+-        _children = [];
+-        notifyListeners();
+-      },
+-    );
++    final user = FirebaseAuth.instance.currentUser;
++
++    if (user == null) {
++      debugPrint('FamilyProvider listen skipped: user null');
++      _childrenSubscription = null;
++      _children = [];
++      return;
++    }
++
++    try {
++      _childrenSubscription = _userService.getLinkedChildrenStream().listen(
++        (children) {
++          _children = children;
++          notifyListeners();
++        },
++        onError: (error) {
++          debugPrint('FamilyProvider listen error: $error');
++          _children = [];
++          notifyListeners();
++        },
++      );
++    } catch (error) {
++      debugPrint('FamilyProvider listen sync error: $error');
++      _childrenSubscription = null;
++      _children = [];
++    }
+   }
+ 
+   Future<void> linkChild(String childId) async {
+@@ -45,6 +61,13 @@ class FamilyProvider extends ChangeNotifier {
+     listenToLinkedChildren();
+   }
+ 
++  void clear() {
++    _childrenSubscription?.cancel();
++    _childrenSubscription = null;
++    _children = [];
++    notifyListeners();
++  }
++
+   @override
+   void dispose() {
+     _childrenSubscription?.cancel();
+diff --git a/flutter_application/lib/screens/parent/parent_profile_screen.dart b/flutter_application/lib/screens/parent/parent_profile_screen.dart
+index 39190dd..24abda7 100644
+--- a/flutter_application/lib/screens/parent/parent_profile_screen.dart
++++ b/flutter_application/lib/screens/parent/parent_profile_screen.dart
+@@ -39,43 +39,41 @@ class ParentProfileScreen extends StatelessWidget {
+     required String value,
+     required String label,
+   }) {
+-    return Expanded(
+-      child: Container(
+-        padding: const EdgeInsets.symmetric(vertical: 16),
+-        decoration: BoxDecoration(
+-          color: Colors.white,
+-          borderRadius: BorderRadius.circular(22),
+-          border: Border.all(color: const Color(0xfff0e7fb)),
+-          boxShadow: [
+-            BoxShadow(
+-              color: Colors.deepPurple.withValues(alpha: 0.08),
+-              blurRadius: 22,
+-              offset: const Offset(0, 8),
+-            ),
+-          ],
+-        ),
+-        child: Column(
+-          children: [
+-            Text(icon, style: const TextStyle(fontSize: 24)),
+-            const SizedBox(height: 6),
+-            Text(
+-              value,
+-              style: const TextStyle(
+-                color: Color(0xff2d243b),
+-                fontSize: 20,
+-                fontWeight: FontWeight.bold,
+-              ),
++    return Container(
++      padding: const EdgeInsets.symmetric(vertical: 16),
++      decoration: BoxDecoration(
++        color: Colors.white,
++        borderRadius: BorderRadius.circular(22),
++        border: Border.all(color: const Color(0xfff0e7fb)),
++        boxShadow: [
++          BoxShadow(
++            color: Colors.deepPurple.withValues(alpha: 0.08),
++            blurRadius: 22,
++            offset: const Offset(0, 8),
++          ),
++        ],
++      ),
++      child: Column(
++        children: [
++          Text(icon, style: const TextStyle(fontSize: 24)),
++          const SizedBox(height: 6),
++          Text(
++            value,
++            style: const TextStyle(
++              color: Color(0xff2d243b),
++              fontSize: 20,
++              fontWeight: FontWeight.bold,
+             ),
+-            Text(
+-              label,
+-              style: const TextStyle(
+-                color: Color(0xff8b7c99),
+-                fontSize: 12,
+-                fontWeight: FontWeight.w700,
+-              ),
++          ),
++          Text(
++            label,
++            style: const TextStyle(
++              color: Color(0xff8b7c99),
++              fontSize: 12,
++              fontWeight: FontWeight.w700,
+             ),
+-          ],
+-        ),
++          ),
++        ],
+       ),
+     );
+   }
+@@ -335,7 +333,9 @@ class ParentProfileScreen extends StatelessWidget {
+     final childProvider = context.watch<ChildProvider>();
+     final familyProvider = context.watch<FamilyProvider>();
+ 
+-    if (!familyProvider.hasChildren) {
++    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
++
++    if (currentUid.isNotEmpty && !familyProvider.hasChildren) {
+       Future.microtask(() {
+         if (context.mounted) {
+           context.read<FamilyProvider>().listenToLinkedChildren();
+@@ -343,8 +343,6 @@ class ParentProfileScreen extends StatelessWidget {
+       });
+     }
+ 
+-    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+-
+     return FutureBuilder<Map<String, dynamic>?>(
+       key: ValueKey(currentUid),
+       future: UserService().getCurrentParentProfile(),
+@@ -467,22 +465,28 @@ class ParentProfileScreen extends StatelessWidget {
+                   const SizedBox(height: 22),
+                   Row(
+                     children: [
+-                      statCard(
+-                        icon: '👦',
+-                        value: '${familyProvider.children.length}',
+-                        label: 'Children',
++                      Expanded(
++                        child: statCard(
++                          icon: '👦',
++                          value: '${familyProvider.children.length}',
++                          label: 'Children',
++                        ),
+                       ),
+                       const SizedBox(width: 12),
+-                      statCard(
+-                        icon: '📋',
+-                        value: '${taskProvider.tasks.length}',
+-                        label: 'Tasks',
++                      Expanded(
++                        child: statCard(
++                          icon: '📋',
++                          value: '${taskProvider.tasks.length}',
++                          label: 'Tasks',
++                        ),
+                       ),
+                       const SizedBox(width: 12),
+-                      statCard(
+-                        icon: '🎁',
+-                        value: '${childProvider.totalReward}',
+-                        label: 'Rewards',
++                      Expanded(
++                        child: statCard(
++                          icon: '🎁',
++                          value: '${childProvider.totalReward}',
++                          label: 'Rewards',
++                        ),
+                       ),
+                     ],
+                   ),
+@@ -574,15 +578,15 @@ class ParentProfileScreen extends StatelessWidget {
+                   const SizedBox(height: 12),
+                   OutlinedButton(
+                     onPressed: () async {
+-                      await AuthService().logout();
+-
+-                      if (!context.mounted) return;
++                      context.read<FamilyProvider>().clear();
+ 
+                       Navigator.pushAndRemoveUntil(
+                         context,
+                         MaterialPageRoute(builder: (_) => const LoginScreen()),
+                         (route) => false,
+                       );
++
++                      await AuthService().logout();
+                     },
+                     style: OutlinedButton.styleFrom(
+                       minimumSize: const Size.fromHeight(54),
